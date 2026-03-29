@@ -10,6 +10,8 @@ def boop_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Check if there are command arguments
     if context.args:
         mentioned_user = ' '.join(context.args)
+        if not mentioned_user.startswith('@'):
+            mentioned_user = f"@{mentioned_user}"
     else:
         # Check entities for mentions
         if update.message.entities:
@@ -18,25 +20,20 @@ def boop_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     # Extract the mention text
                     mentioned_user = update.message.text[entity.offset:entity.offset+entity.length]
                     break
-    
-    # If no user mentioned, default to the sender
-    if not mentioned_user:
-        user = update.effective_user
-        mentioned_user = user.mention_html() if user else "кого-то"
-    elif not mentioned_user.startswith('@'):
-        # If it's not already a mention, make it one
-        mentioned_user = f"@{mentioned_user}"
+        # If no user mentioned, default to self
+        if not mentioned_user:
+            mentioned_user = "себя"
     
     # List of boop phrases in Russian
     boop_phrases = [
-        '<i>Кайо босиком тычет {} в нос</i>',
-        '<i>Кайо тычет {} в кнопку</i>',
-        '<i>Кайо игриво тычет {} в носик</i>',
-        '<i>Кайо тычет {} своей пушистой лапкой</i>',
-        '<i>Кайо нежно тычет {} в носик</i>',
-        '<i>Кайо ласково тычет {} в носик</i>',
-        '<i>Кайо тычет {} в мордочку</i>',
-        '<i>Кайо мило тычет {} в носик</i>'
+        '<i>Вы босиком тычете {} в нос</i>',
+        '<i>Вы тычете {} в кнопку</i>',
+        '<i>Вы игриво тычете {} в носик</i>',
+        '<i>Вы тычете {} своей пушистой лапкой</i>',
+        '<i>Вы нежно тычете {} в носик</i>',
+        '<i>Вы ласково тычете {} в носик</i>',
+        '<i>Вы тычете {} в мордочку</i>',
+        '<i>Вы мило тычете {} в носик</i>'
     ]
     
     phrase = random.choice(boop_phrases)
