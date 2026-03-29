@@ -57,27 +57,48 @@ pip3 install -r requirements.txt
 echo "✓ Dependencies installed"
 echo
 
-# Create .env file if it doesn't exist
+# Create .env file if it doesn't exist, or update token
 if [ ! -f ".env" ]; then
     if [ -f "config.example.env" ]; then
         cp config.example.env .env
         echo "✓ Created .env file from config.example.env"
-        echo "⚠️  Please edit .env and add your Telegram bot token:"
-        echo "   TELEGRAM_BOT_TOKEN=your_actual_bot_token_here"
     else
-        echo "⚠️  config.example.env not found. Please create .env manually with your Telegram bot token."
+        touch .env
+        echo "✓ Created empty .env file"
+    fi
+fi
+
+# Check if token is already set
+CURRENT_TOKEN=$(grep -oP '(?<=^TELEGRAM_BOT_TOKEN=).*' .env 2>/dev/null | head -1)
+if [ -z "$CURRENT_TOKEN" ]; then
+    echo
+    echo "⚠️  Telegram bot token not found!"
+    echo "You can get a token from @BotFather in Telegram."
+    echo
+    read -p "Enter your Telegram bot token: " BOT_TOKEN
+    if [ -n "$BOT_TOKEN" ]; then
+        # Remove existing TELEGRAM_BOT_TOKEN line if present
+        grep -v "^TELEGRAM_BOT_TOKEN=" .env > .env.tmp 2>/dev/null || true
+        mv .env.tmp .env
+        # Add new token
+        echo "TELEGRAM_BOT_TOKEN=$BOT_TOKEN" >> .env
+        echo "✓ Token saved to .env"
+    else
+        echo "⚠️  No token entered. You can add it later by editing .env"
     fi
 else
-    echo "✓ .env file already exists"
+    echo "✓ Bot token is already configured"
 fi
 
 echo
 echo "=== Installation Complete ==="
 echo
 echo "To run the bot:"
-echo "  1. Edit .env and add your Telegram bot token"
-echo "  2. Activate the virtual environment: source venv/bin/activate"
-echo "  3. Run the bot: python main.py"
+echo "  1. Activate virtual environment: source venv/bin/activate"
+echo "  2. Run the bot: python main.py"
+echo
+echo "To change token later, run:"
+echo "  ./set_token.sh"
 echo
 echo "For automatic updates, the bot will check for new releases on startup."
 echo

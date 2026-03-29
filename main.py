@@ -3,15 +3,23 @@
 Main entry point for the Кайо (Kayo) Telegram bot.
 """
 import os
+import sys
 import logging
 import subprocess
 import random
+from pathlib import Path
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
-# Load environment variables from .env file
-load_dotenv()
+# Determine base directory (works with PyInstaller .exe)
+if getattr(sys, 'frozen', False):
+    BASE_DIR = Path(sys.executable).parent
+else:
+    BASE_DIR = Path(__file__).parent
+
+# Load environment variables from .env file next to executable/script
+load_dotenv(BASE_DIR / '.env')
 
 # Enable logging
 logging.basicConfig(
@@ -24,7 +32,8 @@ logger = logging.getLogger(__name__)
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 if not TELEGRAM_BOT_TOKEN:
     logger.error("TELEGRAM_BOT_TOKEN not found in environment variables!")
-    exit(1)
+    logger.error(f"Looked for .env in: {BASE_DIR / '.env'}")
+    sys.exit(1)
 
 # Version constant
 try:

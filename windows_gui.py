@@ -4,18 +4,27 @@ Windows GUI for KayoBot using blessed.
 Displays bot status, chat count, and creator.
 Accepts commands: start, stop, restart, update, token <TOKEN>, exit.
 """
+import os
 import sys
 import time
 import subprocess
 import threading
+from pathlib import Path
 from blessed import Terminal
+
+# Determine base directory (works with PyInstaller .exe)
+if getattr(sys, 'frozen', False):
+    BASE_DIR = Path(sys.executable).parent
+else:
+    BASE_DIR = Path(__file__).parent
+
+ENV_FILE = BASE_DIR / '.env'
 
 # Global state
 bot_process = None
 bot_status = "stopped"  # stopped, running, starting, stopping
 chat_count = 0
-creator = "KayoBot Team"
-token = ""  # current token, if set
+creator = "Creator: SkyFox"
 
 term = Terminal()
 
@@ -34,20 +43,24 @@ def format_status(status):
 
 def update_display():
     """Update the GUI display."""
+    current_token = get_current_token()
+    token_display = f"{'*' * min(len(current_token), 8)}{'...' if len(current_token) > 8 else ''}" if current_token else term.red("NOT SET")
+
     print(term.clear)
     print(term.bold_orange("KayoBot Windows GUI"))
     print("=" * 40)
     print(f"Status: {format_status(bot_status)}")
     print(f"Chats: {chat_count}")
     print(f"Creator: {creator}")
+    print(f"Token: {token_display}")
     print("-" * 40)
     print("Commands:")
-    print("  start       - Start the bot")
-    print("  stop        - Stop the bot")
-    print("  restart     - Restart the bot")
-    print("  update      - Update the bot (pull latest)")
-    print("  token <TOKEN> - Set bot token")
-    print("  exit        - Exit GUI")
+    print("  start         - Start the bot")
+    print("  stop          - Stop the bot")
+    print("  restart       - Restart the bot")
+    print("  update        - Update the bot (pull latest)")
+    print("  token <TOKEN> - Set bot token (saves to .env)")
+    print("  exit          - Exit GUI")
     print("-" * 40)
     print(term.bold_orange("Enter command: "), end="", flush=True)
 
@@ -106,11 +119,49 @@ def update_bot():
         print(term.red(f"Update failed: {e}"))
 
 
+def get_current_token():
+    """Read current token from .env file."""
+    if ENV_FILE.exists():
+        with open(ENV_FILE, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith('TELEGRAM_BOT_TOKEN='):
+                    return line.split('=', 1)[1].strip().strip('"').strip("'")
+    return ""
+
+
 def set_token(new_token):
-    """Set the bot token."""
-    global token
-    token = new_token
-    print(term.green(f"Token set (length: {len(token)})."))
+    """Set the bot token and save to .env file."""
+    new_token = new_token.strip().strip('"').strip("'")
+    if not new_token:
+        print(term.red("Token cannot be empty!"))
+        return
+
+    # Read existing .env content
+    lines = []
+    token_found = False
+    if ENV_FILE.exists():
+        with open(ENV_FILE, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+
+    # Update or add TELEGRAM_BOT_TOKEN
+    new_lines = []
+    for line in lines:
+        if line.strip().startswith('TELEGRAM_BOT_TOKEN='):
+            new_lines.append(f'TELEGRAM_BOT_TOKEN={new_token}\n')
+            token_found = True
+        else:
+            new_lines.append(line)
+
+    if not token_found:
+        new_lines.append(f'TELEGRAM_BOT_TOKEN={new_token}\n')
+
+    # Write back to .env
+    with open(ENV_FILE, 'w', encoding='utf-8') as f:
+        f.writelines(new_lines)
+
+    print(term.green(f"Token saved to {ENV_FILE}"))
+    print(term.green(f"Token length: {len(new_token)}"))
 
 
 def read_output():
@@ -131,6 +182,27 @@ def main():
     global bot_status, chat_count
     print(term.enter_alt_screen)
     print(term.clear)
+
+    # Check if token is set
+    current_token = get_current_token()
+    if not current_token:
+        print(term.bold_orange("KayoBot Windows GUI"))
+        print("=" * 40)
+        print(term.red("⚠️  Telegram bot token not found!"))
+        print()
+        print("Please enter your Telegram bot token.")
+        print("You can get it from @BotFather in Telegram.")
+        print()
+        token_input = input("Enter token: ").strip()
+        if token_input:
+            set_token(token_input)
+            print()
+            print(term.green("Token saved! Starting GUI..."))
+            time.sleep(2)
+        else:
+            print(term.red("No token entered. You can set it later with 'token <TOKEN>' command."))
+            time.sleep(2)
+
     try:
         while True:
             update_display()
