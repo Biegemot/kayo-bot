@@ -159,9 +159,6 @@ class AutoUpdater:
         # Note: os.execv does not return on success
         # If we reach here, execv failed (should not happen because we return False in except)
         return False
-    except Exception as e:
-        logger.error(f"Error during update check: {e}")
-        return False
 
 def setup_auto_update(application) -> None:
     """Setup auto-update to run on bot startup and periodically."""
