@@ -10,22 +10,82 @@ permissions:
   contents: write
 
 jobs:
-  release:
-    runs-on: ubuntu-latest
+  build-windows:
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Read version
         id: version
         shell: bash
         run: echo "version=$(cat version.txt | tr -d '[:space:]')" >> $GITHUB_OUTPUT
 
-      - name: Check if tag already exists
-        id: tag_check
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build Windows exe
         shell: bash
+        run: pyinstaller --onefile --name "kayo-bot-v${{ steps.version.outputs.version }}-win" main.py
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kayo-bot-windows
+          path: dist/kayo-bot-v${{ steps.version.outputs.version }}-win.exe
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read version
+        id: version
+        run: echo "version=$(cat version.txt | tr -d '[:space:]')" >> $GITHUB_OUTPUT
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build Linux binary
+        run: pyinstaller --onefile --name "kayo-bot-v${{ steps.version.outputs.version }}-linux" main.py
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kayo-bot-linux
+          path: dist/kayo-bot-v${{ steps.version.outputs.version }}-linux
+
+  release:
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read version
+        id: version
+        run: echo "version=$(cat version.txt | tr -d '[:space:]')" >> $GITHUB_OUTPUT
+
+      - name: Check if tag exists
+        id: tag_check
         run: |
           if git ls-remote --tags origin "refs/tags/v${{ steps.version.outputs.version }}" | grep -q .; then
             echo "exists=true" >> $GITHUB_OUTPUT
@@ -35,47 +95,32 @@ jobs:
 
       - name: Create tag
         if: steps.tag_check.outputs.exists == 'false'
-        shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag v${{ steps.version.outputs.version }}
           git push origin v${{ steps.version.outputs.version }}
 
-      - name: Set up Python
-        if: steps.tag_check.outputs.exists == 'false'
-        uses: actions/setup-python@v5
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
         with:
-          python-version: '3.11'
+          name: kayo-bot-windows
+          path: artifacts/windows
 
-      - name: Install dependencies
-        if: steps.tag_check.outputs.exists == 'false'
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pyinstaller
-
-      - name: Build Windows executable
-        if: steps.tag_check.outputs.exists == 'false'
-        shell: bash
-        run: |
-          pyinstaller --onefile --name "kayo-bot-v${{ steps.version.outputs.version }}-win" main.py
-
-      - name: Build Linux binary
-        if: steps.tag_check.outputs.exists == 'false'
-        shell: bash
-        run: |
-          pyinstaller --onefile --name "kayo-bot-v${{ steps.version.outputs.version }}-linux" main.py
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: kayo-bot-linux
+          path: artifacts/linux
 
       - name: Create GitHub Release
-        if: steps.tag_check.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: Release v${{ steps.version.outputs.version }}
           generate_release_notes: true
           files: |
-            dist/kayo-bot-v${{ steps.version.outputs.version }}-win.exe
-            dist/kayo-bot-v${{ steps.version.outputs.version }}-linux
+            artifacts/windows/kayo-bot-v${{ steps.version.outputs.version }}-win.exe
+            artifacts/linux/kayo-bot-v${{ steps.version.outputs.version }}-linux
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
