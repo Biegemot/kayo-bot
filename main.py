@@ -28,13 +28,10 @@ if not TELEGRAM_BOT_TOKEN:
 
 # Version constant
 try:
-    from version import VERSION
+    from version import get_current_version
 except ImportError:
-    VERSION = "dev"
-
-def get_version():
-    """Get the current version."""
-    return VERSION
+    def get_current_version():
+        return "dev"
 
 # Import handlers
 from bot.handlers.hug import hug_command
@@ -74,16 +71,18 @@ async def help_command_wrapper(update: Update, context: ContextTypes.DEFAULT_TYP
 
 async def about_command_wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send info about the bot and its version."""
-    version = get_version()
+    version = get_current_version() # использовать новую функцию вместо get_version()
     bot_username = context.bot.username if context.bot else "unknown"
-    
     about_text = f"""
-    🐰 Кайо (Kayo) Telegram Бот
-    Версия: {version}
-    Имя пользователя бота: @{bot_username}
-    
-    Дружелюбный пушистый кролик-бот, который отслеживает активность и реагирует на сообщения.
-    """
+🐰 Кайо (Kayo) Telegram Бот
+
+Версия: {version}
+Имя пользователя бота: @{bot_username}
+
+Дружелюбный пушистый кролик-бот, который отслеживает активность и реагирует на сообщения.
+
+👤 Creator: SkyFox
+"""
     await update.message.reply_text(about_text.strip())
 
 
