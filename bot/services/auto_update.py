@@ -2,188 +2,174 @@ import os
 import sys
 import subprocess
 import logging
-import json
-import urllib.request
-import urllib.error
-import tempfile
-import shutil
-from typing import Optional, Tuple
+import threading
 
 logger = logging.getLogger(__name__)
 
 class AutoUpdater:
     def __init__(self, repo_owner: str = "Biegemot", repo_name: str = "kayo-bot"):
+        # Parameters kept for compatibility but not used in this implementation
         self.repo_owner = repo_owner
         self.repo_name = repo_name
-        self.github_api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/releases/latest"
-        
-    def get_current_version(self) -> str:
-        """Get current version from git tags."""
-        try:
-            # Run git describe --tags --abbrev=0
-            version = subprocess.check_output(['git', 'describe', '--tags', '--abbrev=0'], 
-                                              stderr=subprocess.DEVNULL,
-                                              universal_newlines=True).strip()
-            return version
-        except Exception as e:
-            logger.debug(f"Could not get version from git: {e}")
-            return "dev"
-    
-    def get_latest_release_info(self) -> Optional[dict]:
-        """Fetch latest release info from GitHub API."""
-        try:
-            req = urllib.request.Request(
-                self.github_api_url,
-                headers={'User-Agent': 'KayoBot-AutoUpdater'}
-            )
-            with urllib.request.urlopen(req, timeout=10) as response:
-                if response.status == 200:
-                    data = json.loads(response.read().decode())
-                    return data
-                else:
-                    logger.warning(f"GitHub API returned status {response.status}")
-                    return None
-        except Exception as e:
-            logger.warning(f"Failed to fetch latest release info: {e}")
-            return None
-    
-    def get_asset_name_for_version(self, version: str) -> str:
-        """Determine the asset name for the given version."""
-        # Check if we're running as a frozen executable (e.g., PyInstaller)
-        if getattr(sys, 'frozen', False):
-            # Running as compiled executable
-            if sys.platform.startswith('win'):
-                return f"kayo-bot-{version}.exe"
-            elif sys.platform.startswith('darwin'):
-                return f"kayo-bot-{version}-macos"
-            else:
-                return f"kayo-bot-{version}-linux"
-        else:
-            # Running as script - no asset to download for source
-            return None
-    
-    def download_and_apply_update(self, asset_name: str, download_url: str) -> bool:
-        """Download the update asset and apply it."""
-        try:
-            # Create temporary directory for download
-            with tempfile.TemporaryDirectory() as temp_dir:
-                asset_path = os.path.join(temp_dir, asset_name)
-                
-                # Download the asset
-                logger.info(f"Downloading update from {download_url}")
-                req = urllib.request.Request(
-                    download_url,
-                    headers={'User-Agent': 'KayoBot-AutoUpdater'}
-                )
-                with urllib.request.urlopen(req, timeout=30) as response, \
-                     open(asset_path, 'wb') as out_file:
-                    shutil.copyfileobj(response, out_file)
-                
-                logger.info(f"Download completed: {asset_path}")
-                
-                # Replace current executable
-                current_executable = sys.executable
-                logger.info(f"Current executable: {current_executable}")
-                
-                # Backup current executable (optional)
-                backup_path = current_executable + ".backup"
-                if os.path.exists(current_executable):
-                    shutil.move(current_executable, backup_path)
-                    logger.info(f"Backed up current executable to {backup_path}")
-                
-                # Move new executable to current position
-                shutil.move(asset_path, current_executable)
-                logger.info(f"Updated executable moved to {current_executable}")
-                
-                # Make executable (on Unix-like systems)
-                if not sys.platform.startswith('win'):
-                    os.chmod(current_executable, 0o755)
-                
-                # Restart the bot
-                logger.info("Restarting bot with updated version...")
-                os.execv(current_executable, sys.argv)
-                
-        except Exception as e:
-            logger.error(f"Failed to apply update: {e}")
-            return False
-        
-        return True
-    
+        self._timer = None
+        self._start_periodic_check()
+
+    def _start_periodic_check(self):
+        # Check for updates immediately
+        self.check_and_apply_update()
+        # Schedule next check in 6 hours
+        self._timer = threading.Timer(6 * 60 * 60, self._periodic_check)
+        self._timer.daemon = True
+        self._timer.start()
+
+    def _periodic_check(self):
+        self.check_and_apply_update()
+        self._start_periodic_check()
+
+    def stop_periodic_check(self):
+        if self._timer:
+            self._timer.cancel()
+
     def check_and_apply_update(self) -> bool:
-        """Check for updates and apply if available. Returns True if update was applied."""
+        """Check for updates using git and apply if available.
+        Returns True if update was applied (and bot restarted), False otherwise.
+        """
         try:
-            current_version = self.get_current_version()
-            logger.info(f"Current version: {current_version}")
-            
-            if current_version == "dev":
-                logger.info("Running in development mode, skipping update check")
-                return False
-            
-            release_info = self.get_latest_release_info()
-            if not release_info:
-                logger.warning("Could not fetch release info")
-                return False
-            
-            latest_tag = release_info.get('tag_name', '').lstrip('v')
-            logger.info(f"Latest release tag: {latest_tag}")
-            
-            # Compare versions (simple string comparison, assumes semantic versioning)
-            if self._is_newer_version(latest_tag, current_version):
-                logger.info(f"Newer version available: {latest_tag}")
-                
-                # Find appropriate asset
-                asset_name = self.get_asset_name_for_version(latest_tag)
-                if not asset_name:
-                    logger.info("No asset needed for current platform (running as script)")
-                    return False
-                
-                # Look for the asset in the release
-                assets = release_info.get('assets', [])
-                download_url = None
-                for asset in assets:
-                    if asset.get('name') == asset_name:
-                        download_url = asset.get('browser_download_url')
-                        break
-                
-                if not download_url:
-                    logger.warning(f"Asset {asset_name} not found in release")
-                    return False
-                
-                logger.info(f"Found update asset: {asset_name}")
-                return self.download_and_apply_update(asset_name, download_url)
-            else:
-                logger.info("Current version is up to date")
-                return False
-                
-        except Exception as e:
-            logger.error(f"Error during update check: {e}")
+            # Verify we are in a git repository
+            root = subprocess.check_output(
+                ['git', 'rev-parse', '--show-toplevel'],
+                stderr=subprocess.DEVNULL,
+                universal_newlines=True
+            ).strip()
+        except subprocess.CalledProcessError:
+            logger.warning("Not in a git repository, skipping update check")
             return False
-    
-    def _is_newer_version(self, latest: str, current: str) -> bool:
-        """Compare version strings. Returns True if latest > current."""
+
         try:
-            # Simple version comparison - split by dots and compare numerically
-            latest_parts = [int(x) for x in latest.split('.')]
-            current_parts = [int(x) for x in current.split('.')]
-            
-            # Pad shorter version with zeros
-            max_len = max(len(latest_parts), len(current_parts))
-            latest_parts.extend([0] * (max_len - len(latest_parts)))
-            current_parts.extend([0] * (max_len - len(current_parts)))
-            
-            return latest_parts > current_parts
-        except Exception:
-            # Fallback to string comparison
-            return latest > current
+            # Fetch latest from origin
+            subprocess.check_call(
+                ['git', 'fetch', 'origin'],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+        except subprocess.CalledProcessError as e:
+            logger.warning(f"Failed to fetch from origin: {e}")
+            return False
+
+        try:
+            # Get current commit hash (HEAD)
+            local_hash = subprocess.check_output(
+                ['git', 'rev-parse', 'HEAD'],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                universal_newlines=True
+            ).strip()
+            # Get remote commit hash (origin/main)
+            remote_hash = subprocess.check_output(
+                ['git', 'rev-parse', 'origin/main'],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                universal_newlines=True
+            ).strip()
+        except subprocess.CalledProcessError as e:
+            logger.warning(f"Failed to get commit hashes: {e}")
+            return False
+
+        if local_hash == remote_hash:
+            logger.info("Local repository is up to date with origin/main")
+            return False
+
+        logger.info("Local repository is behind origin/main, checking for file changes...")
+
+        # Get list of changed files between HEAD and origin/main
+        try:
+            changed_files = subprocess.check_output(
+                ['git', 'diff', '--name-only', 'HEAD', 'origin/main'],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                universal_newlines=True
+            ).strip()
+        except subprocess.CalledProcessError as e:
+            logger.warning(f"Failed to get changed files: {e}")
+            return False
+
+        if not changed_files:
+            logger.info("No changed files found.")
+            return False
+
+        changed_files_list = [f.strip() for f in changed_files.split('\n') if f.strip()]
+
+        # Filter out excluded files: .env and anything under bot/data/
+        excluded_files = []
+        filtered_files = []
+        for f in changed_files_list:
+            if f == '.env' or f.startswith('bot/data/'):
+                excluded_files.append(f)
+            else:
+                filtered_files.append(f)
+
+        if excluded_files:
+            logger.info(f"Excluded files from update: {excluded_files}")
+
+        if not filtered_files:
+            logger.info("No files to update after excluding .env and bot/data/")
+            return False
+
+        logger.info(f"Files to update: {filtered_files}")
+
+        # Update each file
+        for file in filtered_files:
+            try:
+                # Get file content from origin/main
+                content = subprocess.check_output(
+                    ['git', 'show', f'origin/main:{file}'],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.DEVNULL
+                )
+            except subprocess.CalledProcessError as e:
+                logger.warning(f"Failed to get file {file} from origin/main: {e}")
+                continue  # Skip this file and continue with others
+
+            # Ensure directory exists
+            dirname = os.path.dirname(file)
+            if dirname and not os.path.exists(dirname):
+                try:
+                    os.makedirs(dirname)
+                except OSError as e:
+                    logger.error(f"Failed to create directory {dirname}: {e}")
+                    return False
+
+            # Write the content
+            try:
+                with open(file, 'wb') as f:
+                    f.write(content)
+                logger.info(f"Updated file: {file}")
+            except Exception as e:
+                logger.error(f"Failed to write file {file}: {e}")
+                return False
+
+        # If we updated any files, restart the bot
+        logger.info("Update applied. Restarting bot...")
+        try:
+            os.execv(sys.executable, sys.argv)
+        except Exception as e:
+            logger.error(f"Failed to restart bot: {e}")
+            return False
+
+        # Note: os.execv does not return on success
+        # If we reach here, execv failed (should not happen because we return False in except)
+        return False
+    except Exception as e:
+        logger.error(f"Error during update check: {e}")
+        return False
 
 def setup_auto_update(application) -> None:
-    """Setup auto-update to run on bot startup."""
+    """Setup auto-update to run on bot startup and periodically."""
     try:
         updater = AutoUpdater()
-        # Check for updates (non-blocking, log errors)
-        if updater.check_and_apply_update():
-            # If update was applied, the bot would have restarted already
-            # This line won't be reached if update succeeded
-            pass
+        # The updater starts a periodic thread in __init__
+        # If update is applied, the bot restarts via os.execv
+        # If not, the thread continues to check every 6 hours
+        logger.info("Auto-update scheduler started")
     except Exception as e:
         logger.error(f"Failed to setup auto-update: {e}")

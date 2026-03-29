@@ -2,8 +2,8 @@ import random
 from telegram import Update
 from telegram.ext import ContextTypes
 
-def bite_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle the /bite command."""
+def kiss_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle the /kiss command."""
     # Get the initiator (user who sent the command)
     initiator = update.effective_user
     initiator_name = initiator.username or initiator.first_name or ""
@@ -30,21 +30,28 @@ def bite_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not target_user:
             target_user = initiator_mention  # self
     
-    # List of bite phrases in Russian (action initiated by initiator on target)
-    bite_phrases = [
-        "кусает",
-        "нежно кусает",
-        "кусает за ушко",
-        "игриво кусает",
-        "любовно кусает",
-        "слегка прикусывает",
-        "нежно покусывает",
-        "играючи кусает"
+    # List of kiss phrases in Russian
+    kiss_phrases = [
+        "нежно поцеловал в щёчку",
+        "страстно поцеловал в губы",
+        "быстро чмокнул в слёзку",
+        "нежно поцеловал в лобик",
+        "страстно поцеловал в шею",
+        "быстро чмокнул в носик",
+        "нежно поцеловал в ручку"
     ]
     
-    phrase = random.choice(bite_phrases)
+    phrase = random.choice(kiss_phrases)
     # Format: @initiator действие @target
     reply_text = f"{initiator_mention} {phrase} {target_user}"
+    
+    # Increment kiss count for initiator
+    db_manager = context.application.bot_data.get('db_manager')
+    if db_manager:
+        chat = update.effective_chat
+        if chat:
+            activity_manager = db_manager.get_activity_manager(chat.id)
+            activity_manager.increment_kiss(initiator.id)
     
     # Send the reply
     update.message.reply_text(reply_text)

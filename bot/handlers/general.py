@@ -40,9 +40,12 @@ def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     /bite [пользователь] - Укусить пользователя (или себя, если пользователь не указан)
     /pat [пользователь] - Погладить пользователя (или себя, если пользователь не указан)
     /boop [пользователь] - Ткнуть пользователя в нос (или себя, если пользователь не указан)
+    /kiss [пользователь] - Поцеловать пользователя (или себя, если пользователь не указан)
+    /slapass [пользователь] - Шлёпнуть пользователя по заднице (или себя, если пользователь не указан)
     /top - Посмотреть топ пользователей по общему количеству сообщений
     /today - Посмотреть топ пользователей по сообщениям за сегодня
-    /me - Посмотреть свою статистику и титул
+    /me [@username] - Посмотреть статистику и титул себя или другого пользователя
+    /titles - Посмотреть список всех доступных титулов
     """
     update.message.reply_text(help_text.strip())
 
@@ -99,7 +102,7 @@ def today_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     update.message.reply_text(message)
 
 def me_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Show your own stats and title."""
+    """Show stats and title for yourself or another user."""
     db_manager = context.application.bot_data.get('db_manager')
     if not db_manager:
         update.message.reply_text("Извините, отслеживание активности недоступно.")
@@ -111,32 +114,62 @@ def me_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     activity_manager = db_manager.get_activity_manager(chat.id)
-    user_id = update.effective_user.id
-    username = update.effective_user.username or update.effective_user.first_name or "Неизвестно"
     
-    stats = activity_manager.get_user_stats(user_id)
+    # Determine target user
+    target_user_id = update.effective_user.id
+    target_username = update.effective_user.username or update.effective_user.first_name or "Неизвестно"
+    
+    # Check for mentioned user in arguments
+    if context.args:
+        # Try to find a mention in entities (text_mention or mention)
+        if update.message.entities:
+            for entity in update.message.entities:
+                if entity.type == 'text_mention' and entity.user:
+                    target_user_id = entity.user.id
+                    target_username = entity.user.username or entity.user.first_name or "Неизвестно"
+                    break
+                elif entity.type == 'mention':
+                    # Extract username without @
+                    username_mention = update.message.text[entity.offset:entity.offset+entity.length]
+                    if username_mention.startswith('@'):
+                        username_mention = username_mention[1:]
+                    # Find user by username
+                    found_user_id = activity_manager.find_user_by_username(username_mention)
+                    if found_user_id:
+                        target_user_id = found_user_id
+                        target_username = username_mention
+                    break
+    
+    stats = activity_manager.get_user_stats(target_user_id)
     if not stats:
         update.message.reply_text("Статистика пока отсутствует. Начните чат!")
         return
     
-    title = activity_manager.get_dynamic_title(user_id)
-    
-    # Map English titles to Russian titles
-    title_mapping = {
-        "Chatter of the Day": "Болтун дня",
-        "Night Owl": "Ночной житель",
-        "Early Bird": "Ранний зверь",
-        "Quiet but Deadly": "Тихий, но опасный",
-        "Ghost": "Призрак"
-    }
-    russian_title = title_mapping.get(title, title)
+    title = activity_manager.get_dynamic_title(target_user_id)
+    rank = activity_manager.get_user_rank(target_user_id)
     
     message = f"""
-    👤 Ваша статистика:
-    Пользователь: {username}
-    Общее количество сообщений: {stats['message_count']}
-    Сообщения за сегодня: {stats['today_count']}
-    Позиция в рейтинге /top: {stats.get('rank', 'Н/Д')}
-    Динамический титул: {russian_title}
-    """
+👤 Статистика пользователя {target_username}:
+📊 Общее количество сообщений: {stats['message_count']}
+📅 Сообщения за сегодня: {stats['today_count']}
+💋 Поцелуев сегодня: {stats['kiss_count_today']}
+👋 Шлёпков сегодня: {stats['slap_count_today']}
+🏆 Позиция в рейтинге: {rank}
+🏅 Титул: {title}
+"""
     update.message.reply_text(message.strip())
+
+def titles_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Show list of all titles with descriptions."""
+    titles_text = """
+🏅 Доступные титулы:
+
+Болтун дня — больше всего сообщений сегодня :)
+Ночной житель — активен ночью
+Ранний зверь — активен утром
+Тихий, но опасный — мало говорит, но когда говорит — точно
+Призрак — давно не был в сети
+Хорни — чаще всего шлёпает других сегодня
+Романтик — чаще всего целует других сегодня
+"""
+    update.message.reply_text(titles_text.strip())

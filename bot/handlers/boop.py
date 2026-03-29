@@ -4,40 +4,47 @@ from telegram.ext import ContextTypes
 
 def boop_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle the /boop command."""
-    # Extract mentioned user
-    mentioned_user = None
+    # Get the initiator (user who sent the command)
+    initiator = update.effective_user
+    initiator_name = initiator.username or initiator.first_name or ""
+    if initiator_name:
+        initiator_mention = f"@{initiator_name}"
+    else:
+        initiator_mention = initiator.first_name or "пользователь"
     
-    # Check if there are command arguments
+    # Extract mentioned user (target)
+    target_user = None
     if context.args:
-        mentioned_user = ' '.join(context.args)
-        if not mentioned_user.startswith('@'):
-            mentioned_user = f"@{mentioned_user}"
+        target_user = ' '.join(context.args)
+        if not target_user.startswith('@'):
+            target_user = f"@{target_user}"
     else:
         # Check entities for mentions
         if update.message.entities:
             for entity in update.message.entities:
                 if entity.type == 'mention':
                     # Extract the mention text
-                    mentioned_user = update.message.text[entity.offset:entity.offset+entity.length]
+                    target_user = update.message.text[entity.offset:entity.offset+entity.length]
                     break
         # If no user mentioned, default to self
-        if not mentioned_user:
-            mentioned_user = "себя"
+        if not target_user:
+            target_user = initiator_mention  # self
     
-    # List of boop phrases in Russian
+    # List of boop phrases in Russian (action initiated by initiator on target)
     boop_phrases = [
-        '<i>Вы босиком тычете {} в нос</i>',
-        '<i>Вы тычете {} в кнопку</i>',
-        '<i>Вы игриво тычете {} в носик</i>',
-        '<i>Вы тычете {} своей пушистой лапкой</i>',
-        '<i>Вы нежно тычете {} в носик</i>',
-        '<i>Вы ласково тычете {} в носик</i>',
-        '<i>Вы тычете {} в мордочку</i>',
-        '<i>Вы мило тычете {} в носик</i>'
+        "босиком ткнул в нос",
+        "ткнул в кнопку",
+        "игриво ткнул в носик",
+        "ткнул своей пушистой лапкой",
+        "нежно ткнул в носик",
+        "ласково ткнул в носик",
+        "ткнул в мордочку",
+        "мило ткнул в носик"
     ]
     
     phrase = random.choice(boop_phrases)
-    reply_text = phrase.format(mentioned_user)
+    # Format: @initiator действие @target
+    reply_text = f"{initiator_mention} {phrase} {target_user}"
     
     # Send the reply
-    update.message.reply_text(reply_text, parse_mode='HTML')
+    update.message.reply_text(reply_text)

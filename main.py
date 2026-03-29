@@ -38,7 +38,9 @@ from bot.handlers.hug import hug_command
 from bot.handlers.bite import bite_command
 from bot.handlers.pat import pat_command
 from bot.handlers.boop import boop_command
-from bot.handlers.general import about_command, help_command, top_command, today_command, me_command
+from bot.handlers.kiss import kiss_command
+from bot.handlers.slappass import slapass_command
+from bot.handlers.general import about_command, help_command, top_command, today_command, me_command, titles_command
 from bot.handlers.reactions import get_reaction
 from bot.services.db_manager import DBManager
 from bot.services.auto_update import setup_auto_update
@@ -60,12 +62,15 @@ async def help_command_wrapper(update: Update, context: ContextTypes.DEFAULT_TYP
     /help - Показать это сообщение помощи
     /about - Информация о боте и версии
     /hug [пользователь] - Обнять пользователя (или себя, если пользователь не указан)
-    /bite [пользователь] - Игриво укусить пользователя
-    /pat [пользователь] - Нежно погладить пользователя
-    /boop [пользователь] - Ткнуть пользователя в нос
+    /bite [пользователь] - Укусить пользователя (или себя, если пользователь не указан)
+    /pat [пользователь] - Погладить пользователя (или себя, если пользователь не указан)
+    /boop [пользователь] - Ткнуть пользователя в нос (или себя, если пользователь не указан)
+    /kiss [пользователь] - Поцеловать пользователя (или себя, если пользователь не указан)
+    /slapass [пользователь] - Шлёпнуть пользователя по заднице (или себя, если пользователь не указан)
     /top - Посмотреть топ пользователей по общему количеству сообщений
     /today - Посмотреть топ пользователей по сообщениям за сегодня
-    /me - Посмотреть свою статистику и титул
+    /me [@username] - Посмотреть статистику и титул себя или другого пользователя
+    /titles - Посмотреть список всех доступных титулов
     """
     await update.message.reply_text(help_text.strip())
 
@@ -132,9 +137,12 @@ def main() -> None:
     application.add_handler(CommandHandler("bite", bite_command))
     application.add_handler(CommandHandler("pat", pat_command))
     application.add_handler(CommandHandler("boop", boop_command))
+    application.add_handler(CommandHandler("kiss", kiss_command))
+    application.add_handler(CommandHandler("slapass", slapass_command))
     application.add_handler(CommandHandler("top", top_command))
     application.add_handler(CommandHandler("today", today_command))
     application.add_handler(CommandHandler("me", me_command))
+    application.add_handler(CommandHandler("titles", titles_command))
 
     # Register message handlers
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, combined_message_handler))

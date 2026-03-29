@@ -20,6 +20,8 @@ jobs:
         id: version
         run: echo "version=$(cat version.txt)" >> $GITHUB_OUTPUT
       - name: Create tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PERSONAL_TOKEN }}
         run: |
           git tag v${{ steps.version.outputs.version }}
           git push origin v${{ steps.version.outputs.version }}
