@@ -1,6 +1,6 @@
 import random
 
-def get_reaction(text):
+def get_reaction(text, user_mention):
     """
     Returns a random reaction string if any trigger word found in the text.
     Trigger words: спать, есть, устал, холодно, грущу
@@ -16,18 +16,17 @@ def get_reaction(text):
     if any(trigger in text_lower for trigger in triggers):
         # 15% chance to return a reaction
         if random.random() < 0.15:
-            # List of possible reactions
+            # List of possible reactions in Russian with HTML formatting
             reactions = [
-                "😴",
-                "🍽️",
-                "😩",
-                "🥶",
-                "😔",
-                "Зzzз",
-                "Пора есть?",
-                "Обниму?",
-                "Холодно? Держись за меня!",
-                "Не грусти, я рядом!"
+                "<i>Кайо зевнул и устроился рядом</i>",   # no username
+                "<i>Заяц принес что-то вкусное {}</i>",   # with username placeholder
+                "<i>Кайо лениво прижался к {}</i>",       # with username placeholder
+                "<i>Кайо подпрыгнул и закутался в свой хвост</i>", # no username
+                "<i>Заяц слегка фыркнул и коснулся носом {}</i>"   # with username placeholder
             ]
-            return random.choice(reactions)
+            reaction = random.choice(reactions)
+            # If the reaction contains a placeholder, format it with the user_mention
+            if '{}' in reaction:
+                return reaction.format(user_mention)
+            return reaction
     return None

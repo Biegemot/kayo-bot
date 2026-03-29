@@ -21,28 +21,28 @@ def about_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     bot_username = context.bot.username if context.bot else "unknown"
     
     about_text = f"""
-    🐰 Кайо (Kayo) Telegram Bot
-    Version: {version}
-    Bot Username: @{bot_username}
+    🐰 Кайо (Kayo) Telegram Бот
+    Версия: {version}
+    Имя пользователя бота: @{bot_username}
     
-    A friendly furry bunny bot that tracks activity and reacts to messages.
+    Дружелюбный пушистый кролик-бот, который отслеживает активность и реагирует на сообщения.
     """
     update.message.reply_text(about_text.strip())
 
 def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Send a list of available commands with descriptions."""
     help_text = """
-    Available commands:
-    /start - Start the bot and see welcome message
-    /help - Show this help message
-    /about - Info about the bot and version
-    /hug [user] - Hug a user (or yourself if no user mentioned)
-    /bite [user] - Playfully bite a user
-    /pat [user] - Pat a user affectionately
-    /boop [user] - Boop a user's nose
-    /top - See top users by total message count
-    /today - See top users by today's message count
-    /me - See your own stats and title
+    🐰 Доступные команды:
+    /start - Запустить бота и увидеть приветственное сообщение
+    /help - Показать это сообщение помощи
+    /about - Информация о боте и версии
+    /hug [пользователь] - Обнять пользователя (или себя, если пользователь не указан)
+    /bite [пользователь] - Игриво укусить пользователя
+    /pat [пользователь] - Погладить пользователя affectionately
+    /boop [пользователь] - Ткнуть пользователя в нос
+    /top - Посмотреть топ пользователей по общему количеству сообщений
+    /today - Посмотреть топ пользователей по сообщениям за сегодня
+    /me - Посмотреть свою статистику и титул
     """
     update.message.reply_text(help_text.strip())
 
@@ -50,23 +50,25 @@ def top_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show top users by total message count."""
     db_manager = context.application.bot_data.get('db_manager')
     if not db_manager:
-        update.message.reply_text("Sorry, activity tracking is not available.")
+        update.message.reply_text("Извините, отслеживание активности недоступно.")
         return
     
     chat = update.effective_chat
     if not chat:
-        update.message.reply_text("Sorry, unable to determine chat.")
+        update.message.reply_text("Извините, не удалось определить чат.")
         return
     
     activity_manager = db_manager.get_activity_manager(chat.id)
     top_users = activity_manager.get_top(limit=10)
     if not top_users:
-        update.message.reply_text("No activity data yet.")
+        update.message.reply_text("Данные об активности пока отсутствуют.")
         return
     
-    message = "🏆 Top Users by Total Messages:\n\n"
+    message = "🥕 Топ болтунов:\n\n"
+    medals = ["🥇", "🥈", "🥉"]
     for i, user in enumerate(top_users, 1):
-        message += f"{i}. {user['username'] or user['user_id']}: {user['message_count']} messages\n"
+        medal = medals[i-1] if i <= 3 else f"{i}."
+        message += f"{medal} {user['username'] or user['user_id']}: {user['message_count']} сообщений\n"
     
     update.message.reply_text(message)
 
@@ -74,23 +76,25 @@ def today_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show top users by today's message count."""
     db_manager = context.application.bot_data.get('db_manager')
     if not db_manager:
-        update.message.reply_text("Sorry, activity tracking is not available.")
+        update.message.reply_text("Извините, отслеживание активности недоступно.")
         return
     
     chat = update.effective_chat
     if not chat:
-        update.message.reply_text("Sorry, unable to determine chat.")
+        update.message.reply_text("Извините, не удалось определить чат.")
         return
     
     activity_manager = db_manager.get_activity_manager(chat.id)
     top_users = activity_manager.get_today_top(limit=10)
     if not top_users:
-        update.message.reply_text("No activity data for today yet.")
+        update.message.reply_text("Данных об активности за сегодня пока нет.")
         return
     
-    message = "📅 Top Users Today:\n\n"
+    message = "🥕 Активность за сегодня:\n\n"
+    medals = ["🥇", "🥈", "🥉"]
     for i, user in enumerate(top_users, 1):
-        message += f"{i}. {user['username'] or user['user_id']}: {user['today_count']} messages today\n"
+        medal = medals[i-1] if i <= 3 else f"{i}."
+        message += f"{medal} {user['username'] or user['user_id']}: {user['today_count']} сообщений сегодня\n"
     
     update.message.reply_text(message)
 
@@ -98,31 +102,41 @@ def me_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show your own stats and title."""
     db_manager = context.application.bot_data.get('db_manager')
     if not db_manager:
-        update.message.reply_text("Sorry, activity tracking is not available.")
+        update.message.reply_text("Извините, отслеживание активности недоступно.")
         return
     
     chat = update.effective_chat
     if not chat:
-        update.message.reply_text("Sorry, unable to determine chat.")
+        update.message.reply_text("Извините, не удалось определить чат.")
         return
     
     activity_manager = db_manager.get_activity_manager(chat.id)
     user_id = update.effective_user.id
-    username = update.effective_user.username or update.effective_user.first_name or "Unknown"
+    username = update.effective_user.username or update.effective_user.first_name or "Неизвестно"
     
     stats = activity_manager.get_user_stats(user_id)
     if not stats:
-        update.message.reply_text("No stats found for you yet. Start chatting!")
+        update.message.reply_text("Статистика пока отсутствует. Начните чат!")
         return
     
     title = activity_manager.get_dynamic_title(user_id)
     
+    # Map English titles to Russian titles
+    title_mapping = {
+        "Chatter of the Day": "Болтун дня",
+        "Night Owl": "Ночной житель",
+        "Early Bird": "Ранний зверь",
+        "Quiet but Deadly": "Тихий, но опасный",
+        "Ghost": "Призрак"
+    }
+    russian_title = title_mapping.get(title, title)
+    
     message = f"""
-    👤 Your Stats:
-    User ID: {user_id}
-    Username: @{username}
-    Total Messages: {stats['message_count']}
-    Today's Messages: {stats['today_count']}
-    Title: {title}
+    👤 Ваша статистика:
+    Пользователь: {username}
+    Общее количество сообщений: {stats['message_count']}
+    Сообщения за сегодня: {stats['today_count']}
+    Позиция в рейтинге /top: {stats.get('rank', 'Н/Д')}
+    Динамический титул: {russian_title}
     """
     update.message.reply_text(message.strip())

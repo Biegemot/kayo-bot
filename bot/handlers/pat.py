@@ -22,25 +22,25 @@ def pat_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # If no user mentioned, default to the sender
     if not mentioned_user:
         user = update.effective_user
-        mentioned_user = user.mention_html() if user else "someone"
+        mentioned_user = user.mention_html() if user else "кого-то"
     elif not mentioned_user.startswith('@'):
         # If it's not already a mention, make it one
         mentioned_user = f"@{mentioned_user}"
     
-    # List of pat phrases
+    # List of pat phrases in Russian
     pat_phrases = [
-        "gently pats the head",
-        "gives a friendly pat",
-        "pats softly",
-        "gives a reassuring pat",
-        "pats with bunny paws",
-        "gives a comforting pat",
-        "pats affectionately",
-        "gives a playful pat"
+        '<i>Кайо нежно гладит {} по голове</i>',
+        '<i>Кайо дружелюбно похлопал {} по плечу</i>',
+        '<i>Кайо мягко погладил {}</i>',
+        '<i>Кайо поддерживающе похлопал {} по спине</i>',
+        '<i>Кайо погладил {} своими пушистыми лапками</i>',
+        '<i>Кайо утешающе погладил {}</i>',
+        '<i>Кайо ласково погладил {}</i>',
+        '<i>Кайо игриво похлопал {} по плечу</i>'
     ]
     
     phrase = random.choice(pat_phrases)
-    reply_text = f"{mentioned_user} {phrase}!"
+    reply_text = phrase.format(mentioned_user)
     
     # Send the reply
     update.message.reply_text(reply_text, parse_mode='HTML')

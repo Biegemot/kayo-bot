@@ -51,24 +51,24 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /start is issued."""
     user = update.effective_user
     await update.message.reply_html(
-        rf"Hi {user.mention_html()}! I'm Кайо, your friendly furry bunny bot. "
-        "Use /help to see what I can do."
+        rf"Привет {user.mention_html()}! Я Кайо, твой дружелюбный пушистый кролик-бот. "
+        "Используй /help, чтобы увидеть, что я могу."
     )
 
 async def help_command_wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /help is issued."""
     help_text = """
-    Available commands:
-    /start - Start the bot
-    /help - Show this help message
-    /about - Info about the bot and version
-    /hug [user] - Hug a user (or yourself if no user mentioned)
-    /bite [user] - Playfully bite a user
-    /pat [user] - Pat a user affectionately
-    /boop [user] - Boop a user's nose
-    /top - See top users by total message count
-    /today - See top users by today's message count
-    /me - See your own stats and title
+    Доступные команды:
+    /start - Запустить бота
+    /help - Показать это сообщение помощи
+    /about - Информация о боте и версии
+    /hug [пользователь] - Обнять пользователя (или себя, если пользователь не указан)
+    /bite [пользователь] - Игриво укусить пользователя
+    /pat [пользователь] - Погладить пользователя affectionately
+    /boop [пользователь] - Ткнуть пользователя в нос
+    /top - Посмотреть топ пользователей по общему количеству сообщений
+    /today - Посмотреть топ пользователей по сообщениям за сегодня
+    /me - Посмотреть свою статистику и титул
     """
     await update.message.reply_text(help_text.strip())
 
@@ -78,11 +78,11 @@ async def about_command_wrapper(update: Update, context: ContextTypes.DEFAULT_TY
     bot_username = context.bot.username if context.bot else "unknown"
     
     about_text = f"""
-    🐰 Кайо (Kayo) Telegram Bot
-    Version: {version}
-    Bot Username: @{bot_username}
+    🐰 Кайо (Kayo) Telegram Бот
+    Версия: {version}
+    Имя пользователя бота: @{bot_username}
     
-    A friendly furry bunny bot that tracks activity and reacts to messages.
+    Дружелюбный пушистый кролик-бот, который отслеживает активность и реагирует на сообщения.
     """
     await update.message.reply_text(about_text.strip())
 
@@ -105,10 +105,13 @@ async def reactions_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     # Get the text of the message
     text = update.message.text
     if text:
+        # Get the user mention for reactions that require a username
+        user = update.effective_user
+        user_mention = user.mention_html() if user else ""
         # 10-20% chance to trigger a reaction (using 15%)
         import random
         if random.random() < 0.15:
-            reaction = get_reaction(text)
+            reaction = get_reaction(text, user_mention)
             if reaction:
                 await update.message.reply_text(reaction)
 

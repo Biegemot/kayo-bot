@@ -22,25 +22,25 @@ def bite_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # If no user mentioned, default to the sender
     if not mentioned_user:
         user = update.effective_user
-        mentioned_user = user.mention_html() if user else "someone"
+        mentioned_user = user.mention_html() if user else "кого-то"
     elif not mentioned_user.startswith('@'):
         # If it's not already a mention, make it one
         mentioned_user = f"@{mentioned_user}"
     
-    # List of bite phrases
+    # List of bite phrases in Russian
     bite_phrases = [
-        "playfully nips",
-        "gives a gentle bite",
-        "nibbles on ear",
-        "playfully bites",
-        "gives a love bite",
-        "softly chomps",
-        "gives a tiny nibble",
-        "playfully munches"
+        '<i>Кайоplayfully кусает {}</i>',
+        '<i>Кайо нежно кусает {}</i>',
+        '<i>Кайо кусает {} за ушко</i>',
+        '<i>Кайо игривно кусает {}</i>',
+        '<i>Кайо любовно кусает {}</i>',
+        '<i>Кайо слегка прикусывает {}</i>',
+        '<i>Кайо нежно покусывает {}</i>',
+        '<i>Кайо играючи кусает {}</i>'
     ]
     
     phrase = random.choice(bite_phrases)
-    reply_text = f"{mentioned_user} {phrase}!"
+    reply_text = phrase.format(mentioned_user)
     
     # Send the reply
     update.message.reply_text(reply_text, parse_mode='HTML')

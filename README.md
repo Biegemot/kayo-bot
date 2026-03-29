@@ -1,70 +1,70 @@
-# Кайо (Kayo) - Furry Bunny Telegram Bot
+# Кайо — фурри-заяц Telegram бот
 
-A Telegram bot named Кайо (Kayo) designed to be a friendly and helpful companion.
+Дружелюбный пушистый кролик-бот для Telegram, который отслеживает активность и реагирует на сообщения с ролевыми командами и автоматическими реакциями.
 
-## Features
+## Особенности
 
-- Roleplay commands: /hug, /bite, /pat, /boop
-- Automatic reactions to messages with various furry-themed responses
-- Dashboard: /top, /today, /me for statistics and rankings
-- Info commands: /start, /help, /about
-- Activity tracking per chat (separate SQLite database for each chat)
-- Auto-update functionality (checks for newer releases on startup)
+- Ролевые команды: `/hug`, `/bite`, `/pat`, `/boop`
+- Автоматические реакции на сообщения с пушистыми ответами
+- Дашборд: `/top`, `/today`, `/me` для статистики и рейтингов
+- Информационные команды: `/start`, `/help`, `/about`
+- Отслеживание активности по чатам (отдельная база данных SQLite для каждого чата)
+- Автообновление (проверка новых релизов при запуске)
 
-## Installation
+## Установка
 
-1. Clone the repository:
+1. Клонируйте репозиторий:
    ```
    git clone https://github.com/Biegemot/kayo-bot.git
    cd kayo-bot
    ```
 
-2. Install the required Python packages:
+2. Установите необходимые Python-пакеты:
    ```
    pip install -r requirements.txt
    ```
 
-3. Create a `.env` file based on `config.example.env` and add your Telegram bot token:
+3. Создайте файл `.env` на основе `config.example.env` и добавьте ваш токен Telegram бота:
    ```
-   TELEGRAM_BOT_TOKEN=your_token_here
+   TELEGRAM_BOT_TOKEN=ваш_токен_здесь
    ```
 
-## Usage
+## Использование
 
-Run the bot:
+Запустите бота:
    ```
    python main.py
    ```
 
-The bot will automatically check for updates on startup and notify if a newer version is available.
+Бот автоматически проверит наличие обновлений при запуске и уведомит, если доступна новая версия.
 
-## Commands
+## Команды
 
-- `/start` - Initialize the bot and get a welcome message
-- `/help` - Show help message with available commands
-- `/about` - Info about the bot and version
-- `/hug [user]` - Hug a user (or yourself if no user mentioned)
-- `/bite [user]` - Playfully bite a user
-- `/pat [user]` - Pat a user affectionately
-- `/boop [user]` - Boop a user's nose
-- `/top` - See top users by total message count in current chat
-- `/today` - See top users by today's message count in current chat
-- `/me` - See your own stats and title in current chat
+- `/start` - Запустить бота и получить приветственное сообщение
+- `/help` - Показать справку с доступными командами
+- `/about` - Информация о боте и версии
+- `/hug [пользователь]` - Обнять пользователя (или себя, если пользователь не указан)
+- `/bite [пользователь]` - Игриво укусить пользователя
+- `/pat [пользователь]` - Погладить пользователя affectionately
+- `/boop [пользователь]` - Ткнуть пользователя в нос
+- `/top` - Посмотреть топ пользователей по общему количеству сообщений в текущем чате
+- `/today` - Посмотреть топ пользователей по сообщениям за сегодня в текущем чате
+- `/me` - Посмотреть свою статистику и титул в текущем чате
 
-## Per-Chat Databases
+## Базы данных per-чат
 
-The bot maintains separate SQLite databases for each chat to ensure data isolation. Each chat gets its own database file stored in the `bot/data/` directory (e.g., `data/chat_123456789.db`). This ensures that statistics and user data are specific to each chat and don't mix between different groups or private chats.
+Бот поддерживает отдельные базы данных SQLite для каждого чата, обеспечивая изоляцию данных. Каждый чат получает собственный файл базы данных, хранящийся в директории `bot/data/` (например, `data/chat_123456789.db`). Это гарантирует, что статистика и данные пользователей специфичны для каждого чата и не смешиваются между различными группами или личными чатами.
 
-## Auto-Update Functionality
+## Автообновление
 
-On startup, the bot checks the latest release on GitHub (Biegemot/kayo-bot) and compares it with the current version. If a newer release is found, it will:
-1. Download the latest release asset (kayo-bot-<version>.exe for Windows)
-2. Replace the current executable
-3. Restart the bot to apply the update
+При запуске бот проверяет последний релиз на GitHub (Biegemot/kayo-bot) и сравнивает его с текущей версией. Если обнаружена более новая версия, он:
+1. Скачает последнюю версию релиза (kayo-bot-<version>.exe для Windows)
+2. Заменит текущий исполняемый файл
+3. Перезапустит бота для применения обновления
 
-The update check happens only once at startup to avoid excessive API calls. Ensure the bot has internet access and write permissions to its directory for the update to work properly.
+Проверка обновлений происходит только один раз при запуске, чтобы избежать избыточных запросов к API. Убедитесь, что бот имеет доступ к интернету и права записи в свою директорию для корректной работы обновления.
 
-## Project Structure
+## Структура проекта
 
 ```
 kayo-bot/
@@ -94,6 +94,6 @@ kayo-bot/
 └── README.md
 ```
 
-## License
+## Лицензия
 
-This project is licensed under the MIT License.
+Этот проект лицензирован по лицензии MIT.
