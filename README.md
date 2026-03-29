@@ -4,12 +4,12 @@ A Telegram bot named Кайо (Kayo) designed to be a friendly and helpful compa
 
 ## Features
 
+- Roleplay commands: /hug, /bite, /pat, /boop
+- Automatic reactions to messages with various furry-themed responses
+- Dashboard: /top, /today, /me for statistics and rankings
+- Info commands: /start, /help, /about
 - Activity tracking per chat (separate SQLite database for each chat)
 - Auto-update functionality (checks for newer releases on startup)
-- Friendly interactive commands: hug, bite, pat, boop
-- Statistics and rankings: top users, today's top users, personal stats
-- Automatic reactions to messages with various furry-themed responses
-- Version information via `/about` command
 
 ## Installation
 
