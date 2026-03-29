@@ -43,7 +43,8 @@ from bot.handlers.pat import pat_command
 from bot.handlers.boop import boop_command
 from bot.handlers.general import about_command, help_command, top_command, today_command, me_command
 from bot.handlers.reactions import get_reaction
-from bot.services.activity import ActivityManager
+from bot.services.db_manager import DBManager
+from bot.services.auto_update import setup_auto_update
 
 # Define command handlers
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -68,8 +69,6 @@ async def help_command_wrapper(update: Update, context: ContextTypes.DEFAULT_TYP
     /top - See top users by total message count
     /today - See top users by today's message count
     /me - See your own stats and title
-    /remind - Set a reminder (stub)
-    /backup - Backup data (stub)
     """
     await update.message.reply_text(help_text.strip())
 
@@ -87,21 +86,18 @@ async def about_command_wrapper(update: Update, context: ContextTypes.DEFAULT_TY
     """
     await update.message.reply_text(about_text.strip())
 
-async def remind(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Stub for /remind command."""
-    await update.message.reply_text("Reminder feature is not implemented yet.")
 
-async def backup(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Stub for /backup command."""
-    await update.message.reply_text("Backup feature is not implemented yet.")
 
 async def increment_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle text messages to increment activity count."""
-    # Get activity manager from bot_data
-    activity_manager = context.application.bot_data.get('activity_manager')
-    if activity_manager:
+    # Get DB manager from bot_data
+    db_manager = context.application.bot_data.get('db_manager')
+    if db_manager:
+        chat = update.effective_chat
         user = update.effective_user
-        if user:
+        if chat and user:
+            # Get activity manager for this chat
+            activity_manager = db_manager.get_activity_manager(chat.id)
             activity_manager.increment_message(user.id, user.username or user.first_name or "")
 
 async def reactions_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -121,9 +117,12 @@ def main() -> None:
     # Create the Application and pass it your bot's token.
     application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 
-    # Create and store activity manager
-    activity_manager = ActivityManager()
-    application.bot_data['activity_manager'] = activity_manager
+    # Create and store DB manager
+    db_manager = DBManager()
+    application.bot_data['db_manager'] = db_manager
+
+    # Setup auto-update
+    setup_auto_update(application)
 
     # Register command handlers
     application.add_handler(CommandHandler("start", start))
@@ -136,8 +135,6 @@ def main() -> None:
     application.add_handler(CommandHandler("top", top_command))
     application.add_handler(CommandHandler("today", today_command))
     application.add_handler(CommandHandler("me", me_command))
-    application.add_handler(CommandHandler("remind", remind))
-    application.add_handler(CommandHandler("backup", backup))
 
     # Register message handlers
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, increment_message_handler))

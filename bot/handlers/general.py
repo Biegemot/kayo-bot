@@ -1,6 +1,6 @@
 from telegram import Update
 from telegram.ext import ContextTypes
-from bot.services.activity import ActivityManager
+from bot.services.db_manager import DBManager
 
 def about_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Send info about the bot and its version."""
@@ -43,18 +43,22 @@ def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     /top - See top users by total message count
     /today - See top users by today's message count
     /me - See your own stats and title
-    /remind - Set a reminder (stub)
-    /backup - Backup data (stub)
     """
     update.message.reply_text(help_text.strip())
 
 def top_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show top users by total message count."""
-    activity_manager = context.application.bot_data.get('activity_manager')
-    if not activity_manager:
+    db_manager = context.application.bot_data.get('db_manager')
+    if not db_manager:
         update.message.reply_text("Sorry, activity tracking is not available.")
         return
     
+    chat = update.effective_chat
+    if not chat:
+        update.message.reply_text("Sorry, unable to determine chat.")
+        return
+    
+    activity_manager = db_manager.get_activity_manager(chat.id)
     top_users = activity_manager.get_top(limit=10)
     if not top_users:
         update.message.reply_text("No activity data yet.")
@@ -68,11 +72,17 @@ def top_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def today_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show top users by today's message count."""
-    activity_manager = context.application.bot_data.get('activity_manager')
-    if not activity_manager:
+    db_manager = context.application.bot_data.get('db_manager')
+    if not db_manager:
         update.message.reply_text("Sorry, activity tracking is not available.")
         return
     
+    chat = update.effective_chat
+    if not chat:
+        update.message.reply_text("Sorry, unable to determine chat.")
+        return
+    
+    activity_manager = db_manager.get_activity_manager(chat.id)
     top_users = activity_manager.get_today_top(limit=10)
     if not top_users:
         update.message.reply_text("No activity data for today yet.")
@@ -86,11 +96,17 @@ def today_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def me_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show your own stats and title."""
-    activity_manager = context.application.bot_data.get('activity_manager')
-    if not activity_manager:
+    db_manager = context.application.bot_data.get('db_manager')
+    if not db_manager:
         update.message.reply_text("Sorry, activity tracking is not available.")
         return
     
+    chat = update.effective_chat
+    if not chat:
+        update.message.reply_text("Sorry, unable to determine chat.")
+        return
+    
+    activity_manager = db_manager.get_activity_manager(chat.id)
     user_id = update.effective_user.id
     username = update.effective_user.username or update.effective_user.first_name or "Unknown"
     
