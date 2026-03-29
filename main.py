@@ -5,6 +5,7 @@ Main entry point for the Кайо (Kayo) Telegram bot.
 import os
 import logging
 import subprocess
+import random
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
@@ -25,16 +26,15 @@ if not TELEGRAM_BOT_TOKEN:
     logger.error("TELEGRAM_BOT_TOKEN not found in environment variables!")
     exit(1)
 
+# Version constant
+try:
+    from version import VERSION
+except ImportError:
+    VERSION = "dev"
+
 def get_version():
-    """Get the current version from git tags."""
-    try:
-        # Run git describe --tags --abbrev=0
-        version = subprocess.check_output(['git', 'describe', '--tags', '--abbrev=0'], 
-                                          stderr=subprocess.DEVNULL,
-                                          universal_newlines=True).strip()
-        return version
-    except Exception:
-        return "dev"
+    """Get the current version."""
+    return VERSION
 
 # Import handlers
 from bot.handlers.hug import hug_command
@@ -64,7 +64,7 @@ async def help_command_wrapper(update: Update, context: ContextTypes.DEFAULT_TYP
     /about - Информация о боте и версии
     /hug [пользователь] - Обнять пользователя (или себя, если пользователь не указан)
     /bite [пользователь] - Игриво укусить пользователя
-    /pat [пользователь] - Погладить пользователя affectionately
+    /pat [пользователь] - Нежно погладить пользователя
     /boop [пользователь] - Ткнуть пользователя в нос
     /top - Посмотреть топ пользователей по общему количеству сообщений
     /today - Посмотреть топ пользователей по сообщениям за сегодня
@@ -88,8 +88,8 @@ async def about_command_wrapper(update: Update, context: ContextTypes.DEFAULT_TY
 
 
 
-async def increment_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle text messages to increment activity count."""
+async def combined_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle text messages to increment activity count and trigger reactions."""
     # Get DB manager from bot_data
     db_manager = context.application.bot_data.get('db_manager')
     if db_manager:
@@ -99,9 +99,8 @@ async def increment_message_handler(update: Update, context: ContextTypes.DEFAUL
             # Get activity manager for this chat
             activity_manager = db_manager.get_activity_manager(chat.id)
             activity_manager.increment_message(user.id, user.username or user.first_name or "")
-
-async def reactions_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle reactions to text messages."""
+    
+    # Handle reactions to text messages
     # Get the text of the message
     text = update.message.text
     if text:
@@ -109,7 +108,6 @@ async def reactions_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         user = update.effective_user
         user_mention = user.mention_html() if user else ""
         # 10-20% chance to trigger a reaction (using 15%)
-        import random
         if random.random() < 0.15:
             reaction = get_reaction(text, user_mention)
             if reaction:
@@ -140,11 +138,15 @@ def main() -> None:
     application.add_handler(CommandHandler("me", me_command))
 
     # Register message handlers
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, increment_message_handler))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, reactions_handler))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, combined_message_handler))
 
     # Run the bot until the user presses Ctrl-C
-    application.run_polling()
+    try:
+        application.run_polling()
+    except Exception as e:
+        logger.error(f"Failed to start the bot: {e}")
+        logger.error("Please check your TELEGRAM_BOT_TOKEN and network connection.")
+        exit(1)
 
 if __name__ == '__main__':
     main()
