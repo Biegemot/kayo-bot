@@ -1,32 +1,84 @@
+"""Automatic reactions to trigger words in messages."""
 import random
 
-def get_reaction(text, user_mention):
+
+# Trigger words mapped to reaction themes
+TRIGGER_REACTIONS = {
+    'спать': [
+        "<i>Кайо зевнул и устроился рядом</i>",
+        "<i>Заяц сладко потянулся и закрыл глаза</i>",
+        "<i>Кайо свернулся клубком и захрапел</i>",
+    ],
+    'есть': [
+        "<i>Заяц принёс что-то вкусное</i>",
+        "<i>Кайо заинтересованно посмотрел на еду</i>",
+        "<i>Заяц громко чавкнул неподалёку</i>",
+    ],
+    'устал': [
+        "<i>Кайо лениво прижался к {user}</i>",
+        "<i>Заяц предложил свою спинку для отдыха</i>",
+        "<i>Кайо мягко обнял за плечи</i>",
+    ],
+    'холодно': [
+        "<i>Кайо закутался в свой хвост</i>",
+        "<i>Заяц прижался к {user} ради тепла</i>",
+        "<i>Кайо предложил разделить плед</i>",
+    ],
+    'грущу': [
+        "<i>Заяц слегка фыркнул и коснулся носом {user}</i>",
+        "<i>Кайо тихо устроился рядом и не отходит</i>",
+        "<i>Заяц принёс маленький цветочек</i>",
+    ],
+    'привет': [
+        "<i>Кайо подпрыгнул и замахал лапками</i>",
+        "<i>Заяц радостно затопал ножками</i>",
+        "<i>Кайо махнул хвостом в ответ</i>",
+    ],
+    'люблю': [
+        "<i>Кайо покраснел и спрятал мордочку в лапках</i>",
+        "<i>Заяц застенчиво отвёл глаза</i>",
+        "<i>Кайо тихо мурлыкнул</i>",
+    ],
+    'скучаю': [
+        "<i>Кайо прижался к {user} и не отпускает</i>",
+        "<i>Заяц достал фотографию и смотрит на неё</i>",
+        "<i>Кайо грустно повесил ушки</i>",
+    ],
+}
+
+# Reaction probability (15%)
+REACTION_PROBABILITY = 0.15
+
+
+def get_reaction(text: str, user_mention: str) -> str | None:
     """
     Returns a random reaction string if any trigger word found in the text.
-    Trigger words: спать, есть, устал, холодно, грущу
-    Probability: 10-20% (we'll use 15% as a middle value)
+    
+    Args:
+        text: Message text to check
+        user_mention: HTML mention of the user who sent the message
+    
+    Returns:
+        Reaction string with HTML formatting, or None
     """
-    # Convert to lowercase for case-insensitive matching
     text_lower = text.lower()
     
-    # List of trigger words
-    triggers = ['спать', 'есть', 'устал', 'холодно', 'грущу']
+    # Find all matching triggers
+    matched_triggers = [trigger for trigger in TRIGGER_REACTIONS if trigger in text_lower]
     
-    # Check if any trigger word is present
-    if any(trigger in text_lower for trigger in triggers):
-        # 15% chance to return a reaction
-        if random.random() < 0.15:
-            # List of possible reactions in Russian with HTML formatting
-            reactions = [
-                "<i>Кайо зевнул и устроился рядом</i>",   # no username
-                "<i>Заяц принес что-то вкусное {}</i>",   # with username placeholder
-                "<i>Кайо лениво прижался к {}</i>",       # with username placeholder
-                "<i>Кайо подпрыгнул и закутался в свой хвост</i>", # no username
-                "<i>Заяц слегка фыркнул и коснулся носом {}</i>"   # with username placeholder
-            ]
-            reaction = random.choice(reactions)
-            # If the reaction contains a placeholder, format it with the user_mention
-            if '{}' in reaction:
-                return reaction.format(user_mention)
-            return reaction
-    return None
+    if not matched_triggers:
+        return None
+    
+    # Random chance to react
+    if random.random() >= REACTION_PROBABILITY:
+        return None
+    
+    # Pick a random trigger and a random reaction for it
+    trigger = random.choice(matched_triggers)
+    reactions = TRIGGER_REACTIONS[trigger]
+    reaction = random.choice(reactions)
+    
+    # Format with user mention if placeholder exists
+    if '{user}' in reaction:
+        return reaction.format(user=user_mention)
+    return reaction

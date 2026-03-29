@@ -79,7 +79,16 @@ class AutoUpdater:
             logger.info("Local repository is up to date with origin/main")
             return False
 
-        logger.info("Local repository is behind origin/main, checking for file changes...")
+        # Try to get remote version for logging
+        try:
+            remote_version = subprocess.check_output(
+                ['git', 'show', 'origin/main:version.txt'],
+                stderr=subprocess.DEVNULL,
+                universal_newlines=True
+            ).strip()
+            logger.info(f"Update available: remote version {remote_version}")
+        except Exception:
+            logger.info("Local repository is behind origin/main, checking for file changes...")
 
         # Get list of changed files between HEAD and origin/main
         try:

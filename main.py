@@ -6,7 +6,6 @@ import os
 import sys
 import logging
 import subprocess
-import random
 from pathlib import Path
 from dotenv import load_dotenv
 from telegram import Update
@@ -114,17 +113,12 @@ async def combined_message_handler(update: Update, context: ContextTypes.DEFAULT
             activity_manager.increment_message(user.id, user.username or user.first_name or "")
     
     # Handle reactions to text messages
-    # Get the text of the message
     text = update.message.text
     if text:
-        # Get the user mention for reactions that require a username
-        user = update.effective_user
-        user_mention = user.mention_html() if user else ""
-        # 10-20% chance to trigger a reaction (using 15%)
-        if random.random() < 0.15:
-            reaction = get_reaction(text, user_mention)
-            if reaction:
-                await update.message.reply_text(reaction)
+        user_mention = update.effective_user.mention_html() if update.effective_user else ""
+        reaction = get_reaction(text, user_mention)
+        if reaction:
+            await update.message.reply_text(reaction)
 
 def main() -> None:
     """Start the bot."""
