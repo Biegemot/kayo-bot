@@ -6,11 +6,11 @@ import logging
 logger = logging.getLogger(__name__)
 
 class ActivityManager:
-    def __init__(self, db_path='bot/database/activity.db'):
+    def __init__(self, db_path):
         """Initialize the database connection and create table if not exists."""
         self.db_path = db_path
         # Ensure the directory exists
-        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
         self.ensure_connection()
         self.create_table()
         self.migrate_schema()  # Ensure schema is up to date

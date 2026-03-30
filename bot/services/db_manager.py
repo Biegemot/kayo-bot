@@ -1,9 +1,21 @@
 import os
+import sys
+from pathlib import Path
 from bot.services.activity import ActivityManager
 
+# Determine base directory (works with PyInstaller .exe)
+if getattr(sys, 'frozen', False):
+    BASE_DIR = Path(sys.executable).parent
+else:
+    # bot/services/db_manager.py -> parent=services -> parent=bot -> parent=project root
+    BASE_DIR = Path(__file__).parent.parent.parent
+
+
 class DBManager:
-    def __init__(self, base_dir='bot/data'):
+    def __init__(self, base_dir=None):
         """Initialize the DB manager with a base directory for chat databases."""
+        if base_dir is None:
+            base_dir = str(BASE_DIR / 'bot' / 'data')
         self.base_dir = base_dir
         # Ensure the base directory exists
         os.makedirs(self.base_dir, exist_ok=True)

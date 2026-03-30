@@ -34,6 +34,17 @@ class AutoUpdater:
         """Check for updates using git and apply if available.
         Returns True if update was applied (and bot restarted), False otherwise.
         """
+        # Check if git is available at all
+        try:
+            subprocess.check_output(
+                ['git', '--version'],
+                stderr=subprocess.DEVNULL,
+                universal_newlines=True
+            )
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            logger.info("Git not available, skipping auto-update")
+            return False
+
         try:
             # Verify we are in a git repository
             root = subprocess.check_output(
@@ -42,7 +53,7 @@ class AutoUpdater:
                 universal_newlines=True
             ).strip()
         except subprocess.CalledProcessError:
-            logger.warning("Not in a git repository, skipping update check")
+            logger.info("Not in a git repository, skipping update check")
             return False
 
         try:
