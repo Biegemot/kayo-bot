@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 """
 Main entry point for the Кайо (Kayo) Telegram bot.
+On Windows .exe: launches GUI by default, use --run-bot to run bot directly.
+On Linux / dev mode: runs bot directly.
 """
 import os
 import sys
 import logging
-import subprocess
 from pathlib import Path
 from dotenv import load_dotenv
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
 # Determine base directory (works with PyInstaller .exe)
 if getattr(sys, 'frozen', False):
@@ -19,6 +18,16 @@ else:
 
 # Load environment variables from .env file next to executable/script
 load_dotenv(BASE_DIR / '.env')
+
+# Windows .exe: launch GUI unless --run-bot flag is passed
+if __name__ == '__main__' and getattr(sys, 'frozen', False) and '--run-bot' not in sys.argv:
+    from bot.gui import main as gui_main
+    gui_main()
+    sys.exit(0)
+
+# Normal bot startup continues below
+from telegram import Update
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
 # Enable logging
 logging.basicConfig(
@@ -156,7 +165,7 @@ def main() -> None:
     except Exception as e:
         logger.error(f"Failed to start the bot: {e}")
         logger.error("Please check your TELEGRAM_BOT_TOKEN and network connection.")
-        exit(1)
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()

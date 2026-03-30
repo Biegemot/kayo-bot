@@ -34,7 +34,13 @@ jobs:
 
       - name: Build Windows exe
         shell: bash
-        run: pyinstaller --onefile --name "kayo-bot-v${{ steps.version.outputs.version }}-win" main.py
+        run: |
+          pyinstaller --onefile \
+            --name "kayo-bot-v${{ steps.version.outputs.version }}-win" \
+            --hidden-import bot.gui \
+            --hidden-import bot.handlers.rp_utils \
+            --add-data "bot;bot" \
+            main.py
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
@@ -64,7 +70,13 @@ jobs:
           pip install pyinstaller
 
       - name: Build Linux binary
-        run: pyinstaller --onefile --name "kayo-bot-v${{ steps.version.outputs.version }}-linux" main.py
+        run: |
+          pyinstaller --onefile \
+            --name "kayo-bot-v${{ steps.version.outputs.version }}-linux" \
+            --hidden-import bot.gui \
+            --hidden-import bot.handlers.rp_utils \
+            --add-data "bot:bot" \
+            main.py
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
