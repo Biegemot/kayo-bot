@@ -173,3 +173,87 @@ def titles_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 Романтик — чаще всего целует других сегодня
 """
     update.message.reply_text(titles_text.strip())
+
+
+def summarize_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Show a fun daily summary of chat activity."""
+    db_manager = context.application.bot_data.get('db_manager')
+    if not db_manager:
+        update.message.reply_text("Извините, отслеживание активности недоступно.")
+        return
+
+    chat = update.effective_chat
+    if not chat:
+        update.message.reply_text("Извините, не удалось определить чат.")
+        return
+
+    activity_manager = db_manager.get_activity_manager(chat.id)
+
+    # Get today's top users
+    today_top = activity_manager.get_today_top(limit=5)
+    if not today_top:
+        update.message.reply_text("📊 Сегодня пока тихо... Никто ничего не написал.")
+        return
+
+    # Count total messages today
+    total_today = sum(u['today_count'] for u in today_top)
+
+    # Get action stats
+    kiss_top = activity_manager.get_kiss_top_today(limit=1)
+    slap_top = activity_manager.get_slap_top_today(limit=1)
+    total_kisses = sum(u['kiss_count_today'] for u in today_top)
+    total_slaps = sum(u['slap_count_today'] for u in today_top)
+
+    # Build summary
+    lines = ["📊 Итоги дня\n"]
+
+    # Activity level
+    if total_today >= 50:
+        vibe = "🔥 Сегодня чат просто горел!"
+    elif total_today >= 20:
+        vibe = "💬 Неплохой денёк, болтали активно!"
+    elif total_today >= 5:
+        vibe = "🙂 Спокойный день, но общались."
+    else:
+        vibe = "😴 Тишина... Все спят?"
+
+    lines.append(vibe)
+    lines.append("")
+    lines.append(f"📝 Сообщений: {total_today}")
+
+    # Most active user
+    top_user = today_top[0]
+    name = top_user['username'] or f"id:{top_user['user_id']}"
+    lines.append(f"🏆 Болтун дня: @{name} ({top_user['today_count']} сообщ.)")
+
+    # RP stats
+    if total_kisses > 0 or total_slaps > 0:
+        lines.append("")
+        lines.append("💕 Действия:")
+        if total_kisses > 0:
+            lines.append(f"  Поцелуев: {total_kisses}")
+            if kiss_top:
+                kisser = kiss_top[0]
+                kname = kisser['username'] or f"id:{kisser['user_id']}"
+                lines.append(f"  Романтик: @{kname}")
+        if total_slaps > 0:
+            lines.append(f"  Шлёпков: {total_slaps}")
+            if slap_top:
+                slapper = slap_top[0]
+                sname = slapper['username'] or f"id:{slapper['user_id']}"
+                lines.append(f"  Хорни: @{sname}")
+
+    # Activity chart (simple bar)
+    if len(today_top) > 1:
+        lines.append("")
+        lines.append("📈 Активность:")
+        max_count = today_top[0]['today_count']
+        for i, user in enumerate(today_top[:3], 1):
+            uname = user['username'] or f"id:{user['user_id']}"
+            bar_len = max(1, int((user['today_count'] / max_count) * 10))
+            bar = "█" * bar_len
+            medals = ["🥇", "🥈", "🥉"]
+            medal = medals[i - 1]
+            lines.append(f"  {medal} {uname}: {bar} {user['today_count']}")
+
+    update.message.reply_text("\n".join(lines))

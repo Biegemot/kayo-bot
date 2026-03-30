@@ -57,7 +57,7 @@ from bot.handlers.pat import pat_command
 from bot.handlers.boop import boop_command
 from bot.handlers.kiss import kiss_command
 from bot.handlers.slapass import slapass_command
-from bot.handlers.general import about_command, help_command, top_command, today_command, me_command, titles_command
+from bot.handlers.general import about_command, help_command, top_command, today_command, me_command, titles_command, summarize_command
 from bot.handlers.reactions import get_reaction
 from bot.services.db_manager import DBManager
 from bot.services.auto_update import setup_auto_update
@@ -155,9 +155,35 @@ def main() -> None:
     application.add_handler(CommandHandler("today", today_command))
     application.add_handler(CommandHandler("me", me_command))
     application.add_handler(CommandHandler("titles", titles_command))
+    application.add_handler(CommandHandler("summarize", summarize_command))
 
     # Register message handlers
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, combined_message_handler))
+
+    # Register commands in Telegram menu
+    from telegram import BotCommand
+    commands = [
+        BotCommand("start", "Запустить бота"),
+        BotCommand("help", "Список команд"),
+        BotCommand("about", "Информация о боте"),
+        BotCommand("hug", "Обнять пользователя"),
+        BotCommand("bite", "Укусить пользователя"),
+        BotCommand("pat", "Погладить пользователя"),
+        BotCommand("boop", "Ткнуть в нос"),
+        BotCommand("kiss", "Поцеловать пользователя"),
+        BotCommand("slapass", "Шлёпнуть пользователя"),
+        BotCommand("top", "Топ по сообщениям"),
+        BotCommand("today", "Активность за сегодня"),
+        BotCommand("me", "Своя статистика"),
+        BotCommand("titles", "Список титулов"),
+        BotCommand("summarize", "Итоги дня"),
+    ]
+
+    async def post_init(app):
+        await app.bot.set_my_commands(commands)
+        logger.info("Bot commands registered in Telegram menu")
+
+    application.post_init = post_init
 
     # Run the bot until the user presses Ctrl-C
     try:

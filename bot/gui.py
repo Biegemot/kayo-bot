@@ -133,6 +133,7 @@ def add_log(message):
 def read_bot_output(proc):
     """Read bot output in background thread."""
     global bot_status
+    # Read stdout
     while proc and proc.poll() is None:
         try:
             line = proc.stdout.readline()
@@ -142,14 +143,18 @@ def read_bot_output(proc):
                     add_log(line)
         except Exception:
             break
-    # Process ended
+    # Read remaining stderr on exit - filter out INFO logs
     if proc:
         try:
             stderr = proc.stderr.read()
             if stderr:
                 for err_line in stderr.strip().split('\n'):
-                    if err_line.strip():
-                        add_log(colored(f"ERR: {err_line.strip()}", Colors.RED))
+                    err_line = err_line.strip()
+                    if not err_line:
+                        continue
+                    # Only show actual errors, skip INFO/DEBUG logs
+                    if ' - ERROR - ' in err_line or ' - CRITICAL - ' in err_line or 'Traceback' in err_line or 'PYI-' in err_line:
+                        add_log(colored(f"ERR: {err_line}", Colors.RED))
         except Exception:
             pass
     bot_status = "stopped"
