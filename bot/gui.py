@@ -30,6 +30,7 @@ class Colors:
     GREEN = '\033[92m'
     YELLOW = '\033[93m'
     RED = '\033[91m'
+    WHITE = '\033[97m'
     BOLD = '\033[1m'
     DIM = '\033[2m'
     END = '\033[0m'
