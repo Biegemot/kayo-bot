@@ -68,4 +68,21 @@ venv.bak/
 Thumbs.db
 
 # Local settings
+.env
 config.env
+
+# Pre-commit hooks
+.pre-commit-config.yaml
+
+# EditorConfig
+.editorconfig
+
+# Python version
+.python-version
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

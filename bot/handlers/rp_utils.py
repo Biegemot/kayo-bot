@@ -44,7 +44,6 @@ def format_rp_action(initiator: str, phrase: str, target: str) -> str:
 
 
 def rp_command_handler(update, context, phrases, increment_callback=None):
-    """Generic RP command handler."""
     """
     Generic RP command handler.
     

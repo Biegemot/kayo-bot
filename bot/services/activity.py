@@ -80,6 +80,22 @@ class ActivityManager:
                 cursor.execute('ALTER TABLE users ADD COLUMN last_active_date TEXT')
                 logger.info("Added last_active_date column to users table")
             
+            # Create user_profiles table if it doesn't exist
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS user_profiles (
+                    user_id INTEGER PRIMARY KEY,
+                    fursona_name TEXT,
+                    species TEXT,
+                    birth_date TEXT,
+                    age INTEGER,
+                    orientation TEXT,
+                    city TEXT,
+                    reference_photo TEXT,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            logger.info("Created user_profiles table")
+            
             self.conn.commit()
         except Exception as e:
             logger.error(f"Error migrating schema: {e}")
@@ -456,3 +472,69 @@ class ActivityManager:
             self.conn.commit()
         except Exception as e:
             logger.error(f"Error cleaning up old messages: {e}")
+
+    # Profile methods
+    def get_profile(self, user_id):
+        """Get user profile."""
+        try:
+            self.ensure_connection()
+            cursor = self.conn.cursor()
+            cursor.execute('SELECT * FROM user_profiles WHERE user_id = ?', (user_id,))
+            row = cursor.fetchone()
+            if row:
+                return dict(row)
+            return None
+        except Exception as e:
+            logger.error(f"Error getting profile for user {user_id}: {e}")
+            return None
+
+    def save_profile_field(self, user_id, field, value):
+        """Save a single profile field."""
+        try:
+            self.ensure_connection()
+            cursor = self.conn.cursor()
+            
+            # Check if profile exists
+            cursor.execute('SELECT user_id FROM user_profiles WHERE user_id = ?', (user_id,))
+            exists = cursor.fetchone()
+            
+            if exists:
+                # Update existing profile
+                cursor.execute(f'UPDATE user_profiles SET {field} = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?', (value, user_id))
+            else:
+                # Create new profile
+                cursor.execute(f'INSERT INTO user_profiles (user_id, {field}) VALUES (?, ?)', (user_id, value))
+            
+            self.conn.commit()
+            return True
+        except Exception as e:
+            logger.error(f"Error saving profile field for user {user_id}: {e}")
+            return False
+
+    def update_profile(self, user_id, data):
+        """Update entire profile."""
+        try:
+            self.ensure_connection()
+            cursor = self.conn.cursor()
+            
+            # Check if profile exists
+            cursor.execute('SELECT user_id FROM user_profiles WHERE user_id = ?', (user_id,))
+            exists = cursor.fetchone()
+            
+            if exists:
+                # Update existing profile
+                set_clause = ', '.join([f"{key} = ?" for key in data.keys()])
+                values = list(data.values()) + [user_id]
+                cursor.execute(f'UPDATE user_profiles SET {set_clause}, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?', values)
+            else:
+                # Create new profile
+                columns = ', '.join(['user_id'] + list(data.keys()))
+                placeholders = ', '.join(['?'] * (len(data) + 1))
+                values = [user_id] + list(data.values())
+                cursor.execute(f'INSERT INTO user_profiles ({columns}) VALUES ({placeholders})', values)
+            
+            self.conn.commit()
+            return True
+        except Exception as e:
+            logger.error(f"Error updating profile for user {user_id}: {e}")
+            return False

@@ -1,21 +1,24 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 from bot.services.db_manager import DBManager
+import os
+import asyncio
 
 def about_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Send info about the bot and its version."""
-    # Get version from main.py (we'll import it or define a function)
-    # Since we cannot import main.py directly (circular), we'll get version from context or define a helper
-    # We'll store version in bot_data or compute it here? Let's compute it here using subprocess.
-    import subprocess
-    import os
+    # Try to get version from version.py first
     try:
-        # Run git describe --tags --abbrev=0
-        version = subprocess.check_output(['git', 'describe', '--tags', '--abbrev=0'], 
-                                          stderr=subprocess.DEVNULL,
-                                          universal_newlines=True).strip()
-    except Exception:
-        version = "dev"
+        from version import get_current_version
+        version = get_current_version()
+    except ImportError:
+        # Fallback to git if version.py not available
+        try:
+            import subprocess
+            version = subprocess.check_output(['git', 'describe', '--tags', '--abbrev=0'], 
+                                              stderr=subprocess.DEVNULL,
+                                              universal_newlines=True).strip()
+        except Exception:
+            version = "dev"
     
     # Get the bot's username if available
     bot_username = context.bot.username if context.bot else "unknown"
@@ -101,63 +104,7 @@ def today_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     update.message.reply_text(message)
 
-def me_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Show stats and title for yourself or another user."""
-    db_manager = context.application.bot_data.get('db_manager')
-    if not db_manager:
-        update.message.reply_text("Извините, отслеживание активности недоступно.")
-        return
-    
-    chat = update.effective_chat
-    if not chat:
-        update.message.reply_text("Извините, не удалось определить чат.")
-        return
-    
-    activity_manager = db_manager.get_activity_manager(chat.id)
-    
-    # Determine target user
-    target_user_id = update.effective_user.id
-    target_username = update.effective_user.username or update.effective_user.first_name or "Неизвестно"
-    
-    # Check for mentioned user in arguments
-    if context.args:
-        # Try to find a mention in entities (text_mention or mention)
-        if update.message.entities:
-            for entity in update.message.entities:
-                if entity.type == 'text_mention' and entity.user:
-                    target_user_id = entity.user.id
-                    target_username = entity.user.username or entity.user.first_name or "Неизвестно"
-                    break
-                elif entity.type == 'mention':
-                    # Extract username without @
-                    username_mention = update.message.text[entity.offset:entity.offset+entity.length]
-                    if username_mention.startswith('@'):
-                        username_mention = username_mention[1:]
-                    # Find user by username
-                    found_user_id = activity_manager.find_user_by_username(username_mention)
-                    if found_user_id:
-                        target_user_id = found_user_id
-                        target_username = username_mention
-                    break
-    
-    stats = activity_manager.get_user_stats(target_user_id)
-    if not stats:
-        update.message.reply_text("Статистика пока отсутствует. Начните чат!")
-        return
-    
-    title = activity_manager.get_dynamic_title(target_user_id)
-    rank = activity_manager.get_user_rank(target_user_id)
-    
-    message = f"""
-👤 Статистика пользователя {target_username}:
-📊 Общее количество сообщений: {stats['message_count']}
-📅 Сообщения за сегодня: {stats['today_count']}
-💋 Поцелуев сегодня: {stats['kiss_count_today']}
-👋 Шлёпков сегодня: {stats['slap_count_today']}
-🏆 Позиция в рейтинге: {rank}
-🏅 Титул: {title}
-"""
-    update.message.reply_text(message.strip())
+# me_stats_command removed - functionality moved to profile.py
 
 def titles_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show list of all titles with descriptions."""

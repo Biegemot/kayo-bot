@@ -57,7 +57,7 @@ from bot.handlers.pat import pat_command
 from bot.handlers.boop import boop_command
 from bot.handlers.kiss import kiss_command
 from bot.handlers.slapass import slapass_command
-from bot.handlers.general import about_command, help_command, top_command, today_command, me_command, titles_command, summarize_command, update_command
+from bot.handlers.general import about_command, help_command, top_command, today_command, titles_command, summarize_command, update_command
 from bot.handlers.reactions import get_reaction
 from bot.services.db_manager import DBManager
 from bot.services.auto_update import setup_auto_update
@@ -189,10 +189,14 @@ def main() -> None:
     application.add_handler(CommandHandler("slapass", slapass_command))
     application.add_handler(CommandHandler("top", top_command))
     application.add_handler(CommandHandler("today", today_command))
-    application.add_handler(CommandHandler("me", me_command))
+    # /me команда теперь обрабатывается в bot/handlers/profile.py
     application.add_handler(CommandHandler("titles", titles_command))
     application.add_handler(CommandHandler("summarize", summarize_command))
     application.add_handler(CommandHandler("update", update_command))
+
+    # Register profile handlers
+    from bot.handlers.profile import register_profile_handlers
+    register_profile_handlers(application)
 
     # Register message and chat member handlers
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, combined_message_handler))
@@ -213,7 +217,7 @@ def main() -> None:
         BotCommand("slapass", "Шлёпнуть пользователя"),
         BotCommand("top", "Топ по сообщениям"),
         BotCommand("today", "Активность за сегодня"),
-        BotCommand("me", "Своя статистика"),
+        BotCommand("me", "Моя анкета и статистика"),
         BotCommand("titles", "Список титулов"),
         BotCommand("summarize", "Итоги дня"),
         BotCommand("update", "Проверить обновления"),
