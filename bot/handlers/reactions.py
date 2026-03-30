@@ -50,17 +50,8 @@ TRIGGER_REACTIONS = {
 REACTION_PROBABILITY = 0.15
 
 
-def get_reaction(text: str, user_mention: str) -> str | None:
-    """
-    Returns a random reaction string if any trigger word found in the text.
-    
-    Args:
-        text: Message text to check
-        user_mention: HTML mention of the user who sent the message
-    
-    Returns:
-        Reaction string with HTML formatting, or None
-    """
+def get_reaction(text, user_mention):
+    """Returns a random reaction if trigger word found, else None."""
     text_lower = text.lower()
     
     # Find all matching triggers

@@ -43,12 +43,8 @@ def format_rp_action(initiator: str, phrase: str, target: str) -> str:
     return f"{initiator} {phrase} {target}"
 
 
-def rp_command_handler(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE,
-    phrases: list[str],
-    increment_callback=None
-) -> None:
+def rp_command_handler(update, context, phrases, increment_callback=None):
+    """Generic RP command handler."""
     """
     Generic RP command handler.
     
