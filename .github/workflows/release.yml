@@ -39,6 +39,7 @@ jobs:
             --name "kayo-bot-v${{ steps.version.outputs.version }}-win" \
             --hidden-import bot.gui \
             --hidden-import bot.handlers.rp_utils \
+            --collect-all certifi \
             --add-data "bot;bot" \
             --add-data "version.txt;." \
             main.py
@@ -76,6 +77,7 @@ jobs:
             --name "kayo-bot-v${{ steps.version.outputs.version }}-linux" \
             --hidden-import bot.gui \
             --hidden-import bot.handlers.rp_utils \
+            --collect-all certifi \
             --add-data "bot:bot" \
             --add-data "version.txt:." \
             main.py

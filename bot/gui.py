@@ -243,12 +243,21 @@ def check_for_updates():
     """Check for updates and apply if available."""
     add_log("Checking for updates...")
     try:
-        # Import auto-update module
-        sys.path.insert(0, str(BASE_DIR))
-        from bot.services.auto_update import check_and_apply_update, get_current_version, restart_application
+        from bot.services.auto_update import (
+            check_and_apply_update, get_current_version,
+            get_latest_release_info, restart_application
+        )
 
         current = get_current_version()
         add_log(f"Current version: v{current}")
+
+        # Check what GitHub has
+        latest_tag, assets = get_latest_release_info()
+        if latest_tag:
+            add_log(f"Latest release: v{latest_tag}")
+        else:
+            add_log(colored("Cannot reach GitHub API. Check internet/proxy.", Colors.RED))
+            return
 
         updated, msg = check_and_apply_update(force=True)
         add_log(msg)
@@ -260,7 +269,7 @@ def check_for_updates():
             restart_application()
 
     except Exception as e:
-        add_log(colored(f"Update check failed: {e}", Colors.RED))
+        add_log(colored(f"Update failed: {type(e).__name__}: {e}", Colors.RED))
 
 
 def show_token_prompt():

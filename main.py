@@ -110,6 +110,39 @@ async def about_command_wrapper(update: Update, context: ContextTypes.DEFAULT_TY
 
 
 
+async def chat_member_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle bot being added to or removed from a group."""
+    result = update.my_chat_member
+    if not result:
+        return
+
+    old_status = result.old_chat_member.status
+    new_status = result.new_chat_member.status
+
+    # Bot was added to a group (member or administrator)
+    if new_status in ('member', 'administrator') and old_status in ('left', 'kicked'):
+        chat = update.effective_chat
+        if chat and chat.type in ('group', 'supergroup'):
+            welcome = (
+                "🐰 Привет! Я Кайо, ваш дружелюбный пушистый кролик-бот!\n\n"
+                "Вот что я умею:\n"
+                "• Отслеживаю активность чата 📊\n"
+                "• Реагирую на сообщения (попробуйте написать \"хочу спать\" 😴)\n"
+                "• Умею обнимать, кусать, целовать и шлёпать! /help\n"
+                "• Показываю топ активных и итоги дня /summarize\n\n"
+                "Используйте /help чтобы увидеть все команды. Приятного общения! 🐾"
+            )
+            try:
+                await context.bot.send_message(chat_id=chat.id, text=welcome)
+            except Exception:
+                pass
+
+    # Bot was removed from group
+    elif new_status in ('left', 'kicked'):
+        # Could clean up DB here if needed
+        pass
+
+
 async def combined_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle text messages to increment activity count and trigger reactions."""
     db_manager = context.application.bot_data.get('db_manager')
@@ -159,8 +192,10 @@ def main() -> None:
     application.add_handler(CommandHandler("titles", titles_command))
     application.add_handler(CommandHandler("summarize", summarize_command))
 
-    # Register message handlers
+    # Register message and chat member handlers
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, combined_message_handler))
+    from telegram.ext import ChatMemberHandler
+    application.add_handler(ChatMemberHandler(chat_member_handler, ChatMemberHandler.MY_CHAT_MEMBER))
 
     # Register commands in Telegram menu
     from telegram import BotCommand

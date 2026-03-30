@@ -21,16 +21,23 @@ CHECK_INTERVAL_HOURS = 6
 
 def get_current_version():
     """Get current version from version.txt."""
+    search_paths = []
+
     if getattr(sys, 'frozen', False):
-        base = Path(sys.executable).parent
+        # PyInstaller: check MEIPASS (temp extract dir) and exe directory
+        if hasattr(sys, '_MEIPASS'):
+            search_paths.append(Path(sys._MEIPASS) / 'version.txt')
+        search_paths.append(Path(sys.executable).parent / 'version.txt')
     else:
         base = Path(__file__).parent.parent.parent
-    version_file = base / 'version.txt'
-    if version_file.exists():
-        try:
-            return version_file.read_text(encoding='utf-8').strip()
-        except Exception:
-            pass
+        search_paths.append(base / 'version.txt')
+
+    for path in search_paths:
+        if path.exists():
+            try:
+                return path.read_text(encoding='utf-8').strip()
+            except Exception:
+                continue
     return "0.0.0"
 
 
