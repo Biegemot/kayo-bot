@@ -56,7 +56,7 @@ from bot.handlers.bite import bite_command
 from bot.handlers.pat import pat_command
 from bot.handlers.boop import boop_command
 from bot.handlers.kiss import kiss_command
-from bot.handlers.slappass import slapass_command
+from bot.handlers.slapass import slapass_command
 from bot.handlers.general import about_command, help_command, top_command, today_command, me_command, titles_command
 from bot.handlers.reactions import get_reaction
 from bot.services.db_manager import DBManager
