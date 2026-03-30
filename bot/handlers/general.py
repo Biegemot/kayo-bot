@@ -175,7 +175,139 @@ def titles_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     update.message.reply_text(titles_text.strip())
 
 
-def summarize_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+import random
+import re
+from collections import Counter
+
+
+# Stop words for topic extraction (Russian)
+STOP_WORDS = {
+    'и', 'в', 'на', 'с', 'по', 'за', 'к', 'у', 'о', 'а', 'но', 'да', 'или',
+    'не', 'ни', 'что', 'как', 'это', 'все', 'мне', 'мой', 'моя', 'моё',
+    'он', 'она', 'они', 'мы', 'вы', 'я', 'ты', 'его', 'её', 'их', 'нас',
+    'вас', 'быть', 'был', 'была', 'было', 'были', 'будет', 'будут',
+    'тот', 'та', 'то', 'те', 'этот', 'эта', 'эти', 'так', 'тоже', 'же',
+    'уже', 'ещё', 'только', 'очень', 'можно', 'нужно', 'надо', 'есть',
+    'там', 'тут', 'здесь', 'сейчас', 'потом', 'когда', 'если', 'чтобы',
+    'где', 'куда', 'откуда', 'почему', 'зачем', 'сколько', 'какой',
+    'какая', 'какие', 'чей', 'чья', 'чьи', 'свой', 'сам', 'сама', 'сами',
+    'для', 'без', 'под', 'над', 'перед', 'между', 'через', 'после',
+    'до', 'от', 'из', 'со', 'об', 'про', 'при', 'насчёт',
+    'ну', 'да', 'нет', 'ага', 'угу', 'ой', 'ах', 'эх', 'ого',
+    'короче', 'типа', 'прям', 'просто', 'вообще', 'блин', 'чё', 'чо',
+    'лол', 'кек', 'хаха', 'хех', 'хм', 'эм', 'м', 'хмм',
+    'https', 'http', 'com', 'ru', 'www',
+}
+
+
+def extract_topics(messages, top_n=3):
+    """Extract top topics from messages by finding frequent words."""
+    word_counts = Counter()
+    for text in messages:
+        # Clean text: lowercase, remove non-alpha
+        words = re.findall(r'[а-яёa-z]{4,}', text.lower())
+        for word in words:
+            if word not in STOP_WORDS and len(word) >= 4:
+                word_counts[word] += 1
+    return [word for word, _ in word_counts.most_common(top_n)]
+
+
+def detect_mood(messages, total_messages, total_actions):
+    """Detect the mood/character of the day."""
+    text_all = ' '.join(messages).lower()
+
+    sleep_words = sum(1 for w in ['спать', 'устал', 'сон', 'засып', 'сплю', 'хочу спать'] if w in text_all)
+    food_words = sum(1 for w in ['есть', 'еда', 'кушать', 'голодн', 'обед', 'ужин', 'завтрак'] if w in text_all)
+    work_words = sum(1 for w in ['работ', 'задач', 'проект', 'дедлайн', 'код', 'баг'] if w in text_all)
+
+    if total_messages <= 3:
+        return random.choice(["Тихий день — почти штиль", "Сегодня было тихо", "День прошёл в тишине"])
+    elif total_actions >= total_messages * 0.3:
+        return random.choice(["Активный день — много действий!", "Сегодня было жарко", "Бурный день!"])
+    elif sleep_words >= 2:
+        return random.choice(["Уставший день", "Сегодня все хотели спать", "Сонный денёк"])
+    elif food_words >= 2:
+        return random.choice(["Сытый день", "Сегодня обсуждали еду", "Гастрономический день"])
+    elif work_words >= 2:
+        return random.choice(["Рабочий день", "Сегодня говорили о делах", "Деловой день"])
+    elif total_messages >= 50:
+        return random.choice(["Очень активный день!", "Чат просто горел!", "Невероятно болтливый день"])
+    elif total_messages >= 20:
+        return random.choice(["Неплохой день", "Живой день", "Оживлённый денёк"])
+    else:
+        return random.choice(["Спокойный день", "Обычный денёк", "Тихий, но тёплый день"])
+
+
+def _user_name(user):
+    """Get display name for user."""
+    return f"@{user['username']}" if user['username'] else f"id:{user['user_id']}"
+
+
+# Templates for /summarize output
+SUMMARY_TEMPLATES = [
+    # Template 1
+    lambda data: (
+        f"📊 Итоги дня\n\n"
+        f"{data['mood']}.\n\n"
+        f"{'Сегодня было ' + str(data['total']) + ' сообщений.' if data['total'] > 0 else 'Сегодня было тихо.'}\n"
+        f"{_summary_users(data)}"
+        f"{_summary_rp(data)}"
+        f"{_summary_topics(data)}"
+    ),
+    # Template 2
+    lambda data: (
+        f"📋 Дневной отчёт\n\n"
+        f"{data['mood']} — {data['total']} сообщений.\n\n"
+        f"{_summary_users(data)}"
+        f"{_summary_rp(data)}"
+        f"{_summary_topics(data)}"
+    ),
+    # Template 3
+    lambda data: (
+        f"🐰 Итоги\n\n"
+        f"{_summary_users(data)}"
+        f"Всего: {data['total']} сообщений. {data['mood']}.\n\n"
+        f"{_summary_rp(data)}"
+        f"{_summary_topics(data)}"
+    ),
+]
+
+
+def _summary_users(data):
+    """Format top users section."""
+    if not data['top_users']:
+        return ""
+    lines = []
+    top = data['top_users']
+    if len(top) >= 3:
+        lines.append(f"Больше всех писали {_user_name(top[0])}, {_user_name(top[1])} и {_user_name(top[2])}.")
+    elif len(top) == 2:
+        lines.append(f"Больше всех писали {_user_name(top[0])} и {_user_name(top[1])}.")
+    else:
+        lines.append(f"Больше всех писал {_user_name(top[0])}.")
+    return '\n'.join(lines) + '\n'
+
+
+def _summary_rp(data):
+    """Format RP actions section."""
+    parts = []
+    if data['kiss_top']:
+        parts.append(f"{_user_name(data['kiss_top'])} сегодня был самым романтичным 💋")
+    if data['slap_top']:
+        parts.append(f"{_user_name(data['slap_top'])} явно не сдерживался 👋")
+    if parts:
+        return '\n' + '\n'.join(parts) + '\n'
+    return ''
+
+
+def _summary_topics(data):
+    """Format topics section."""
+    if not data['topics']:
+        return ""
+    return f"\nЧаще всего обсуждали: {', '.join(data['topics'])}."
+
+
+def summarize_command(update, context):
     """Show a fun daily summary of chat activity."""
     db_manager = context.application.bot_data.get('db_manager')
     if not db_manager:
@@ -189,71 +321,34 @@ def summarize_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     activity_manager = db_manager.get_activity_manager(chat.id)
 
-    # Get today's top users
+    # Gather data
     today_top = activity_manager.get_today_top(limit=5)
     if not today_top:
         update.message.reply_text("📊 Сегодня пока тихо... Никто ничего не написал.")
         return
 
-    # Count total messages today
-    total_today = sum(u['today_count'] for u in today_top)
+    total = sum(u['today_count'] for u in today_top)
+    kiss_top_list = activity_manager.get_kiss_top_today(limit=1)
+    slap_top_list = activity_manager.get_slap_top_today(limit=1)
+    total_actions = sum(u['kiss_count_today'] + u['slap_count_today'] for u in today_top)
 
-    # Get action stats
-    kiss_top = activity_manager.get_kiss_top_today(limit=1)
-    slap_top = activity_manager.get_slap_top_today(limit=1)
-    total_kisses = sum(u['kiss_count_today'] for u in today_top)
-    total_slaps = sum(u['slap_count_today'] for u in today_top)
+    # Get messages for topic extraction
+    messages = activity_manager.get_today_messages()
+    topics = extract_topics(messages)
+    mood = detect_mood(messages, total, total_actions)
 
-    # Build summary
-    lines = ["📊 Итоги дня\n"]
+    # Build data dict
+    data = {
+        'total': total,
+        'top_users': today_top[:3],
+        'kiss_top': kiss_top_list[0] if kiss_top_list else None,
+        'slap_top': slap_top_list[0] if slap_top_list else None,
+        'topics': topics,
+        'mood': mood,
+    }
 
-    # Activity level
-    if total_today >= 50:
-        vibe = "🔥 Сегодня чат просто горел!"
-    elif total_today >= 20:
-        vibe = "💬 Неплохой денёк, болтали активно!"
-    elif total_today >= 5:
-        vibe = "🙂 Спокойный день, но общались."
-    else:
-        vibe = "😴 Тишина... Все спят?"
+    # Pick random template
+    template = random.choice(SUMMARY_TEMPLATES)
+    result = template(data)
 
-    lines.append(vibe)
-    lines.append("")
-    lines.append(f"📝 Сообщений: {total_today}")
-
-    # Most active user
-    top_user = today_top[0]
-    name = top_user['username'] or f"id:{top_user['user_id']}"
-    lines.append(f"🏆 Болтун дня: @{name} ({top_user['today_count']} сообщ.)")
-
-    # RP stats
-    if total_kisses > 0 or total_slaps > 0:
-        lines.append("")
-        lines.append("💕 Действия:")
-        if total_kisses > 0:
-            lines.append(f"  Поцелуев: {total_kisses}")
-            if kiss_top:
-                kisser = kiss_top[0]
-                kname = kisser['username'] or f"id:{kisser['user_id']}"
-                lines.append(f"  Романтик: @{kname}")
-        if total_slaps > 0:
-            lines.append(f"  Шлёпков: {total_slaps}")
-            if slap_top:
-                slapper = slap_top[0]
-                sname = slapper['username'] or f"id:{slapper['user_id']}"
-                lines.append(f"  Хорни: @{sname}")
-
-    # Activity chart (simple bar)
-    if len(today_top) > 1:
-        lines.append("")
-        lines.append("📈 Активность:")
-        max_count = today_top[0]['today_count']
-        for i, user in enumerate(today_top[:3], 1):
-            uname = user['username'] or f"id:{user['user_id']}"
-            bar_len = max(1, int((user['today_count'] / max_count) * 10))
-            bar = "█" * bar_len
-            medals = ["🥇", "🥈", "🥉"]
-            medal = medals[i - 1]
-            lines.append(f"  {medal} {uname}: {bar} {user['today_count']}")
-
-    update.message.reply_text("\n".join(lines))
+    update.message.reply_text(result.strip())

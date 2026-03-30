@@ -88,6 +88,7 @@ async def help_command_wrapper(update: Update, context: ContextTypes.DEFAULT_TYP
     /today - Посмотреть топ пользователей по сообщениям за сегодня
     /me [@username] - Посмотреть статистику и титул себя или другого пользователя
     /titles - Посмотреть список всех доступных титулов
+    /summarize - Итоги дня с темами и настроением чата
     """
     await update.message.reply_text(help_text.strip())
 
@@ -111,18 +112,19 @@ async def about_command_wrapper(update: Update, context: ContextTypes.DEFAULT_TY
 
 async def combined_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle text messages to increment activity count and trigger reactions."""
-    # Get DB manager from bot_data
     db_manager = context.application.bot_data.get('db_manager')
     if db_manager:
         chat = update.effective_chat
         user = update.effective_user
         if chat and user:
-            # Get activity manager for this chat
             activity_manager = db_manager.get_activity_manager(chat.id)
             activity_manager.increment_message(user.id, user.username or user.first_name or "")
-    
-    # Handle reactions to text messages
-    text = update.message.text
+            # Store message text for topic extraction
+            if update.message and update.message.text:
+                activity_manager.store_message(user.id, update.message.text)
+
+    # Handle reactions
+    text = update.message.text if update.message else None
     if text:
         user_mention = update.effective_user.mention_html() if update.effective_user else ""
         reaction = get_reaction(text, user_mention)

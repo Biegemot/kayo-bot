@@ -239,6 +239,30 @@ def restart_bot():
     start_bot()
 
 
+def check_for_updates():
+    """Check for updates and apply if available."""
+    add_log("Checking for updates...")
+    try:
+        # Import auto-update module
+        sys.path.insert(0, str(BASE_DIR))
+        from bot.services.auto_update import check_and_apply_update, get_current_version, restart_application
+
+        current = get_current_version()
+        add_log(f"Current version: v{current}")
+
+        updated, msg = check_and_apply_update(force=True)
+        add_log(msg)
+
+        if updated:
+            add_log(colored("Restarting with new version...", Colors.GREEN))
+            time.sleep(1)
+            stop_bot()
+            restart_application()
+
+    except Exception as e:
+        add_log(colored(f"Update check failed: {e}", Colors.RED))
+
+
 def show_token_prompt():
     """Show interactive token setup prompt."""
     clear_screen()
@@ -293,7 +317,8 @@ def show_menu():
     print("    [2] Stop bot")
     print("    [3] Restart bot")
     print("    [4] Set/change token")
-    print("    [5] View logs")
+    print("    [5] Check for updates")
+    print("    [6] View logs")
     print("    [0] Exit")
     print()
 
@@ -346,6 +371,9 @@ def main():
             elif choice == '4':
                 show_token_prompt()
             elif choice == '5':
+                check_for_updates()
+                time.sleep(2)
+            elif choice == '6':
                 view_logs()
             elif choice == '0' or choice.lower() == 'exit':
                 if bot_status == "running":

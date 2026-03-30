@@ -39,6 +39,18 @@ class ActivityManager:
                     last_message_ts INTEGER
                 )
             ''')
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS messages (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER,
+                    text TEXT,
+                    msg_date TEXT,
+                    msg_ts INTEGER
+                )
+            ''')
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_messages_date ON messages(msg_date)
+            ''')
             self.conn.commit()
         except Exception as e:
             logger.error(f"Error creating table: {e}")
@@ -405,3 +417,42 @@ class ActivityManager:
         except Exception as e:
             logger.error(f"Error finding user by username {username}: {e}")
             return None
+
+    def store_message(self, user_id, text):
+        """Store a message for topic extraction."""
+        try:
+            self.ensure_connection()
+            cursor = self.conn.cursor()
+            today = date.today().isoformat()
+            now_ts = int(datetime.now().timestamp())
+            cursor.execute('''
+                INSERT INTO messages (user_id, text, msg_date, msg_ts)
+                VALUES (?, ?, ?, ?)
+            ''', (user_id, text[:500], today, now_ts))
+            self.conn.commit()
+        except Exception as e:
+            logger.error(f"Error storing message: {e}")
+
+    def get_today_messages(self):
+        """Get all message texts from today for topic extraction."""
+        try:
+            self.ensure_connection()
+            cursor = self.conn.cursor()
+            today = date.today().isoformat()
+            cursor.execute('SELECT text FROM messages WHERE msg_date = ?', (today,))
+            return [row['text'] for row in cursor.fetchall() if row['text']]
+        except Exception as e:
+            logger.error(f"Error getting today messages: {e}")
+            return []
+
+    def cleanup_old_messages(self, days=7):
+        """Remove messages older than N days."""
+        try:
+            self.ensure_connection()
+            cursor = self.conn.cursor()
+            cutoff = date.today().isoformat()
+            cursor.execute('DELETE FROM messages WHERE msg_date < date(?, ?)',
+                           (cutoff, f'-{days} days'))
+            self.conn.commit()
+        except Exception as e:
+            logger.error(f"Error cleaning up old messages: {e}")
