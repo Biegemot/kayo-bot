@@ -57,7 +57,7 @@ from bot.handlers.pat import pat_command
 from bot.handlers.boop import boop_command
 from bot.handlers.kiss import kiss_command
 from bot.handlers.slapass import slapass_command
-from bot.handlers.general import about_command, help_command, top_command, today_command, me_command, titles_command, summarize_command
+from bot.handlers.general import about_command, help_command, top_command, today_command, me_command, titles_command, summarize_command, update_command
 from bot.handlers.reactions import get_reaction
 from bot.services.db_manager import DBManager
 from bot.services.auto_update import setup_auto_update
@@ -89,6 +89,7 @@ async def help_command_wrapper(update: Update, context: ContextTypes.DEFAULT_TYP
     /me [@username] - Посмотреть статистику и титул себя или другого пользователя
     /titles - Посмотреть список всех доступных титулов
     /summarize - Итоги дня с темами и настроением чата
+    /update - Проверить и установить обновления
     """
     await update.message.reply_text(help_text.strip())
 
@@ -191,6 +192,7 @@ def main() -> None:
     application.add_handler(CommandHandler("me", me_command))
     application.add_handler(CommandHandler("titles", titles_command))
     application.add_handler(CommandHandler("summarize", summarize_command))
+    application.add_handler(CommandHandler("update", update_command))
 
     # Register message and chat member handlers
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, combined_message_handler))
@@ -214,6 +216,7 @@ def main() -> None:
         BotCommand("me", "Своя статистика"),
         BotCommand("titles", "Список титулов"),
         BotCommand("summarize", "Итоги дня"),
+        BotCommand("update", "Проверить обновления"),
     ]
 
     async def post_init(app):

@@ -177,6 +177,8 @@ def titles_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 import random
 import re
+import sys
+import os
 from collections import Counter
 
 
@@ -352,3 +354,29 @@ def summarize_command(update, context):
     result = template(data)
 
     update.message.reply_text(result.strip())
+
+
+def update_command(update, context):
+    """Check for updates and apply if available."""
+    try:
+        from bot.services.auto_update import check_and_apply_update, get_current_version, restart_application
+
+        current = get_current_version()
+        update.message.reply_text(f"🔄 Проверяю обновления... (текущая: v{current})")
+
+        updated, msg = check_and_apply_update(force=True)
+
+        if updated:
+            update.message.reply_text(f"✅ {msg}\nПерезапускаюсь...")
+            # Give time for the message to be sent
+            import threading
+            def delayed_restart():
+                import time
+                time.sleep(2)
+                restart_application()
+            threading.Thread(target=delayed_restart, daemon=True).start()
+        else:
+            update.message.reply_text(f"ℹ️ {msg}")
+
+    except Exception as e:
+        update.message.reply_text(f"❌ Ошибка при обновлении: {e}")

@@ -1,105 +1,118 @@
 #!/bin/bash
-# Linux installer script for Kayo Bot
-# Automates the installation process on Linux systems
+# Kayo Bot — Linux Installer
+# Full installation with systemd service
 
-set -e  # Exit on any error
+set -e
 
-echo "=== Kayo Bot Linux Installer ==="
-echo "This script will help you install Kayo Bot on your Linux system."
+echo "╔══════════════════════════════════╗"
+echo "║   🐰 Kayo Bot Linux Installer    ║"
+echo "║   Creator: SkyFox                ║"
+echo "╚══════════════════════════════════╝"
 echo
 
-# Check if we're in the kayo-bot directory
+# Check we're in the repo
 if [ ! -f "main.py" ] || [ ! -f "requirements.txt" ]; then
-    echo "Error: This script must be run from the kayo-bot repository root."
-    echo "Current directory: $(pwd)"
-    echo "Please navigate to the kayo-bot directory and run this script again."
+    echo "Error: Run from the kayo-bot repository root."
+    echo "Usage: cd kayo-bot && ./install_linux.sh"
     exit 1
 fi
 
-# Check if git is available
-if ! command -v git &> /dev/null; then
-    echo "Error: git is not installed. Please install git first."
-    exit 1
+# Check dependencies
+echo "Checking dependencies..."
+MISSING=""
+for cmd in python3 git; do
+    if ! command -v $cmd &>/dev/null; then
+        MISSING="$MISSING $cmd"
+    fi
+done
+
+# pip might be pip3
+if ! command -v pip3 &>/dev/null && ! command -v pip &>/dev/null; then
+    MISSING="$MISSING pip"
 fi
 
-# Check if python3 is available
-if ! command -v python3 &> /dev/null; then
-    echo "Error: python3 is not installed. Please install python3 first."
+if [ -n "$MISSING" ]; then
+    echo "Error: Missing dependencies:$MISSING"
+    echo "Install them first:"
+    echo "  sudo apt install python3 python3-pip python3-venv git  # Debian/Ubuntu"
+    echo "  sudo dnf install python3 python3-pip git                # Fedora"
     exit 1
 fi
-
-# Check if pip is available
-if ! command -v pip3 &> /dev/null; then
-    echo "Error: pip3 is not installed. Please install pip3 first."
-    exit 1
-fi
-
-echo "✓ All required tools are available"
+echo "✓ Dependencies OK"
 echo
 
-# Create virtual environment (optional but recommended)
-echo "Setting up Python virtual environment..."
+# Create virtual environment
+echo "Setting up Python environment..."
 if [ ! -d "venv" ]; then
     python3 -m venv venv
     echo "✓ Virtual environment created"
-else
-    echo "✓ Virtual environment already exists"
 fi
-
-# Activate virtual environment
 source venv/bin/activate
-echo "✓ Virtual environment activated"
-
-# Install dependencies
-echo "Installing Python dependencies..."
-pip3 install --upgrade pip
-pip3 install -r requirements.txt
-echo "✓ Dependencies installed"
+pip install --upgrade pip -q
+pip install -r requirements.txt -q
+echo "✓ Python packages installed"
 echo
 
-# Create .env file if it doesn't exist, or update token
+# Token setup
 if [ ! -f ".env" ]; then
-    if [ -f "config.example.env" ]; then
-        cp config.example.env .env
-        echo "✓ Created .env file from config.example.env"
-    else
-        touch .env
-        echo "✓ Created empty .env file"
-    fi
+    [ -f "config.example.env" ] && cp config.example.env .env || touch .env
 fi
 
-# Check if token is already set
 CURRENT_TOKEN=$(grep -oP '(?<=^TELEGRAM_BOT_TOKEN=).*' .env 2>/dev/null | head -1)
 if [ -z "$CURRENT_TOKEN" ]; then
+    echo "🔑 Telegram bot token not configured."
+    echo "   Get one from @BotFather in Telegram."
     echo
-    echo "⚠️  Telegram bot token not found!"
-    echo "You can get a token from @BotFather in Telegram."
-    echo
-    read -p "Enter your Telegram bot token: " BOT_TOKEN
+    read -p "   Enter token (or Enter to skip): " BOT_TOKEN
     if [ -n "$BOT_TOKEN" ]; then
-        # Remove existing TELEGRAM_BOT_TOKEN line if present
         grep -v "^TELEGRAM_BOT_TOKEN=" .env > .env.tmp 2>/dev/null || true
         mv .env.tmp .env
-        # Add new token
         echo "TELEGRAM_BOT_TOKEN=$BOT_TOKEN" >> .env
-        echo "✓ Token saved to .env"
+        echo "✓ Token saved"
     else
-        echo "⚠️  No token entered. You can add it later by editing .env"
+        echo "⚠️  Skipped — set later with: ./manage.sh token"
     fi
 else
-    echo "✓ Bot token is already configured"
+    echo "✓ Token already configured"
+fi
+echo
+
+# Make scripts executable
+chmod +x manage.sh set_token.sh 2>/dev/null || true
+
+# Ask about systemd service
+echo "📦 Systemd service installation (recommended for production)."
+echo "   This will run the bot automatically on boot."
+echo
+read -p "   Install as systemd service? (Y/n): " INSTALL_SERVICE
+INSTALL_SERVICE=${INSTALL_SERVICE:-y}
+
+if [ "$INSTALL_SERVICE" = "y" ] || [ "$INSTALL_SERVICE" = "Y" ]; then
+    if [ -f "install_service.sh" ]; then
+        echo
+        bash install_service.sh
+    else
+        echo "⚠️  install_service.sh not found, skipping service setup"
+    fi
+else
+    echo "Skipped service installation."
+    echo
+    echo "To run manually:"
+    echo "  source venv/bin/activate"
+    echo "  python main.py"
 fi
 
 echo
-echo "=== Installation Complete ==="
+echo "═══════════════════════════════════"
+echo "✅ Installation complete!"
 echo
-echo "To run the bot:"
-echo "  1. Activate virtual environment: source venv/bin/activate"
-echo "  2. Run the bot: python main.py"
-echo
-echo "To change token later, run:"
-echo "  ./set_token.sh"
-echo
-echo "For automatic updates, the bot will check for new releases on startup."
+echo "Management commands:"
+echo "  ./manage.sh status   — check status"
+echo "  ./manage.sh start    — start bot"
+echo "  ./manage.sh stop     — stop bot"
+echo "  ./manage.sh restart  — restart bot"
+echo "  ./manage.sh logs     — view logs"
+echo "  ./manage.sh update   — update bot"
+echo "  ./manage.sh token    — change token"
 echo
 echo "Happy bot-keeping! 🐰"
