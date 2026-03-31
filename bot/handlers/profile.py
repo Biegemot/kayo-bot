@@ -118,43 +118,18 @@ async def handle_profile_callback(update: Update, context: ContextTypes.DEFAULT_
         # Close the message
         await query.delete_message()
     
-    elif data.startswith("edit_"):
-        # Field editing
-        field = data.split("_", 1)[1]
-        if field in FIELD_PROMPTS or field == 'personality_type':
-            await request_field_value(query.from_user.id, field, context, update)
-    
-    elif data == "edit_done":
-        # Finish editing
-        await query.edit_message_text(text="Редактирование завершено! Используй /me для просмотра анкеты.")
-    
     elif data.startswith("personality_"):
         # Personality type selection
         personality_type = data.split("_", 1)[1]
         
-        if personality_type == "custom":
-            # Request custom text
-            context.user_data['editing_field'] = 'personality_type'
-            try:
-                await context.bot.send_message(
-                    chat_id=query.from_user.id,
-                    text="Введите свой вариант типа личности:"
-                )
-            except Exception as e:
-                # If bot can't start conversation, ask user to write first
-                await query.edit_message_text(
-                    text="Напишите мне в личные сообщения, чтобы установить тип личности: @{}"
-                    .format(context.bot.username)
-                )
-        else:
-            # Save selected personality type
-            db_manager = context.application.bot_data.get('db_manager')
-            if db_manager:
-                activity_manager = db_manager.get_activity_manager(query.from_user.id)
-                activity_manager.save_profile_field(query.from_user.id, 'personality_type', personality_type)
-            
-            # Show updated menu
-            await show_edit_menu(query.from_user.id, context, update)
+        # Save selected personality type
+        db_manager = context.application.bot_data.get('db_manager')
+        if db_manager:
+            activity_manager = db_manager.get_activity_manager(query.from_user.id)
+            activity_manager.save_profile_field(query.from_user.id, 'personality_type', personality_type)
+        
+        # Show updated menu
+        await show_edit_menu(query.from_user.id, context, update)
 
 
 async def show_edit_menu(user_id: int, context: ContextTypes.DEFAULT_TYPE, update: Update = None):
@@ -237,9 +212,6 @@ async def request_field_value(user_id: int, field: str, context: ContextTypes.DE
             if len(keyboard) == 0 or len(keyboard[-1]) >= 2:
                 keyboard.append([])
             keyboard[-1].append(InlineKeyboardButton(ptype, callback_data=f"personality_{ptype}"))
-        
-        # Add custom text option
-        keyboard.append([InlineKeyboardButton("✏️ Свой вариант", callback_data="personality_custom")])
         
         reply_markup = InlineKeyboardMarkup(keyboard)
         
