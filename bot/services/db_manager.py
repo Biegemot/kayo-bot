@@ -3,39 +3,30 @@ import sys
 from pathlib import Path
 from bot.services.activity import ActivityManager
 
-# Determine base directory (works with PyInstaller .exe)
-if getattr(sys, 'frozen', False):
-    # When running from PyInstaller, use the executable's directory
-    BASE_DIR = Path(sys.executable).parent
-else:
-    # bot/services/db_manager.py -> parent=services -> parent=bot -> parent=project root
-    BASE_DIR = Path(__file__).parent.parent.parent
-
 
 class DBManager:
     def __init__(self, base_dir=None):
         """Initialize the DB manager with a base directory for chat databases."""
         if base_dir is None:
-            # Try to use a user-writable directory
-            # First, try the executable's directory (for PyInstaller)
+            # Determine base directory dynamically (works with PyInstaller .exe)
             if getattr(sys, 'frozen', False):
-                candidate_dir = Path(sys.executable).parent / 'bot' / 'data'
+                # When running from PyInstaller, use the executable's directory
+                base_dir = str(Path(sys.executable).parent / 'bot' / 'data')
             else:
                 # For development, use the project's bot/data directory
-                candidate_dir = BASE_DIR / 'bot' / 'data'
+                # bot/services/db_manager.py -> parent=services -> parent=bot -> parent=project root
+                base_dir = str(Path(__file__).parent.parent.parent / 'bot' / 'data')
             
             # If the candidate directory is not writable, use a user directory
             try:
-                os.makedirs(candidate_dir, exist_ok=True)
+                os.makedirs(base_dir, exist_ok=True)
                 # Test write permission
-                test_file = candidate_dir / '.write_test'
+                test_file = Path(base_dir) / '.write_test'
                 test_file.touch()
                 test_file.unlink()
-                base_dir = str(candidate_dir)
             except (OSError, PermissionError):
                 # Fallback to user's home directory
-                user_dir = Path.home() / '.kayo-bot' / 'data'
-                base_dir = str(user_dir)
+                base_dir = str(Path.home() / '.kayo-bot' / 'data')
         
         self.base_dir = base_dir
         # Ensure the base directory exists
