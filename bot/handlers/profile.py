@@ -30,9 +30,59 @@ FIELD_PROMPTS = {
     'orientation': "Введите ориентацию (например, гетеро, гей, би, пан):",
     'city': "Введите город:",
     'looking_for': "Введите, кого ищете (например, друга, парня, девочку):",
-    'personality_type': "Введите тип личности (например, интроверт, экстраверт):",
     'reference_photo': "Отправьте фото референса или URL:"
 }
+
+# Personality types for inline selection
+PERSONALITY_TYPES = [
+    "Интроверт",
+    "Экстраверт",
+    "Амбиверт",
+    "Интуитивный",
+    "Сенсорный",
+    "Логик",
+    "Эмоциональный"
+]
+
+
+async def generate_profile_text(user, profile, stats, title, rank, max_length=1024):
+    """Generate profile text with length limit."""
+    # Build profile text
+    profile_text = ""
+    if profile:
+        for field, label in FIELD_LABELS.items():
+            value = profile.get(field)
+            if value:
+                if field == 'reference_photo':
+                    continue
+                profile_text += f"{label}: {value}\n"
+    
+    # Build message
+    text = f"👤 Анкета @{user.username or user.first_name}\n\n"
+    
+    if profile_text:
+        text += profile_text + "\n"
+    
+    # Add stats
+    stats_text = f"📊 Общее количество сообщений: {stats['message_count']}\n"
+    stats_text += f"📅 Сообщения за сегодня: {stats['today_count']}\n"
+    stats_text += f"💋 Поцелуев сегодня: {stats['kiss_count_today']}\n"
+    stats_text += f"👋 Шлёпков сегодня: {stats['slap_count_today']}\n"
+    stats_text += f"🏆 Позиция в рейтинге: {rank}\n"
+    stats_text += f"🏅 Титул: {title}\n"
+    
+    # Check length and truncate if needed
+    if len(text) + len(stats_text) > max_length:
+        # Calculate available space for stats
+        available = max_length - len(text) - 50  # Reserve space for "..."
+        if available > 0:
+            stats_text = stats_text[:available] + "..."
+        else:
+            stats_text = "Статистика слишком длинная..."
+    
+    text += stats_text
+    
+    return text
 
 
 async def profile_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -49,20 +99,6 @@ async def profile_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     activity_manager = db_manager.get_activity_manager(update.effective_chat.id)
     profile = activity_manager.get_profile(user_id)
     
-    # Build profile text
-    profile_text = ""
-    photo_file_id = None
-    if profile:
-        for field, label in FIELD_LABELS.items():
-            value = profile.get(field)
-            if value:
-                if field == 'reference_photo':
-                    # Extract photo file_id if it's a photo
-                    if value.startswith('photo:'):
-                        photo_file_id = value.split(':', 1)[1]
-                    continue
-                profile_text += f"{label}: {value}\n"
-    
     # Get stats
     stats = activity_manager.get_user_stats(user_id)
     if not stats:
@@ -72,18 +108,15 @@ async def profile_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     title = activity_manager.get_dynamic_title(user_id)
     rank = activity_manager.get_user_rank(user_id)
     
-    # Build message
-    text = f"👤 Анкета @{user.username or user.first_name}\n\n"
+    # Generate profile text
+    text = await generate_profile_text(user, profile, stats, title, rank)
     
-    if profile_text:
-        text += profile_text + "\n"
-    
-    text += f"📊 Общее количество сообщений: {stats['message_count']}\n"
-    text += f"📅 Сообщения за сегодня: {stats['today_count']}\n"
-    text += f"💋 Поцелуев сегодня: {stats['kiss_count_today']}\n"
-    text += f"👋 Шлёпков сегодня: {stats['slap_count_today']}\n"
-    text += f"🏆 Позиция в рейтинге: {rank}\n"
-    text += f"🏅 Титул: {title}\n"
+    # Get photo if available
+    photo_file_id = None
+    if profile and profile.get('reference_photo'):
+        ref_photo = profile.get('reference_photo')
+        if ref_photo and ref_photo.startswith('photo:'):
+            photo_file_id = ref_photo.split(':', 1)[1]
     
     # Create inline keyboard
     keyboard = InlineKeyboardMarkup([
@@ -121,12 +154,34 @@ async def handle_profile_callback(update: Update, context: ContextTypes.DEFAULT_
     elif data.startswith("edit_"):
         # Field editing
         field = data.split("_", 1)[1]
-        if field in FIELD_PROMPTS:
+        if field in FIELD_PROMPTS or field == 'personality_type':
             await request_field_value(query.from_user.id, field, context)
     
     elif data == "edit_done":
         # Finish editing
         await query.edit_message_text(text="Редактирование завершено! Используй /me для просмотра анкеты.")
+    
+    elif data.startswith("personality_"):
+        # Personality type selection
+        personality_type = data.split("_", 1)[1]
+        
+        if personality_type == "custom":
+            # Request custom text
+            context.user_data['editing_field'] = 'personality_type'
+            await context.bot.send_message(
+                chat_id=query.from_user.id,
+                text="Введите свой вариант типа личности:"
+            )
+        else:
+            # Save selected personality type
+            db_manager = context.application.bot_data.get('db_manager')
+            if db_manager:
+                activity_manager = db_manager.get_activity_manager(query.from_user.id)
+                activity_manager.save_profile_field(query.from_user.id, 'personality_type', personality_type)
+            
+            # Show updated menu
+            await show_edit_menu(query.from_user.id, context)
+            await query.delete_message()
 
 
 async def show_edit_menu(user_id: int, context: ContextTypes.DEFAULT_TYPE):
@@ -181,12 +236,32 @@ async def request_field_value(user_id: int, field: str, context: ContextTypes.DE
     # Store editing state
     context.user_data['editing_field'] = field
     
-    # Send prompt
-    prompt = FIELD_PROMPTS.get(field, "Введите новое значение:")
-    await context.bot.send_message(
-        chat_id=user_id,
-        text=prompt
-    )
+    # Special handling for personality_type
+    if field == 'personality_type':
+        # Show inline keyboard with personality types
+        keyboard = []
+        for i, ptype in enumerate(PERSONALITY_TYPES):
+            if len(keyboard) == 0 or len(keyboard[-1]) >= 2:
+                keyboard.append([])
+            keyboard[-1].append(InlineKeyboardButton(ptype, callback_data=f"personality_{ptype}"))
+        
+        # Add custom text option
+        keyboard.append([InlineKeyboardButton("✏️ Свой вариант", callback_data="personality_custom")])
+        
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await context.bot.send_message(
+            chat_id=user_id,
+            text="Выберите тип личности:",
+            reply_markup=reply_markup
+        )
+    else:
+        # Send prompt for text input
+        prompt = FIELD_PROMPTS.get(field, "Введите новое значение:")
+        await context.bot.send_message(
+            chat_id=user_id,
+            text=prompt
+        )
 
 
 async def handle_profile_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
