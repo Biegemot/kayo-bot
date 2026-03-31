@@ -90,6 +90,8 @@ class ActivityManager:
                     age INTEGER,
                     orientation TEXT,
                     city TEXT,
+                    looking_for TEXT,
+                    personality_type TEXT,
                     reference_photo TEXT,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )

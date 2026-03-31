@@ -16,6 +16,8 @@ FIELD_LABELS = {
     'age': '🔢 Возраст',
     'orientation': '💕 Ориентация',
     'city': '🏙️ Город',
+    'looking_for': '🤝 Ищет',
+    'personality_type': '🎭 Тип личности',
     'reference_photo': '🖼️ Референс'
 }
 
@@ -27,6 +29,8 @@ FIELD_PROMPTS = {
     'age': "Введите возраст:",
     'orientation': "Введите ориентацию (например, гетеро, гей, би, пан):",
     'city': "Введите город:",
+    'looking_for': "Введите, кого ищете (например, друга, парня, девочку):",
+    'personality_type': "Введите тип личности (например, интроверт, экстраверт):",
     'reference_photo': "Отправьте фото референса или URL:"
 }
 
@@ -47,10 +51,16 @@ async def profile_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # Build profile text
     profile_text = ""
+    photo_file_id = None
     if profile:
         for field, label in FIELD_LABELS.items():
             value = profile.get(field)
             if value:
+                if field == 'reference_photo':
+                    # Extract photo file_id if it's a photo
+                    if value.startswith('photo:'):
+                        photo_file_id = value.split(':', 1)[1]
+                    continue
                 profile_text += f"{label}: {value}\n"
     
     # Get stats
@@ -81,7 +91,15 @@ async def profile_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("❌ Закрыть", callback_data="profile_close")]
     ])
     
-    await update.message.reply_text(text, reply_markup=keyboard)
+    # Send photo if available
+    if photo_file_id:
+        await update.message.reply_photo(
+            photo=photo_file_id,
+            caption=text,
+            reply_markup=keyboard
+        )
+    else:
+        await update.message.reply_text(text, reply_markup=keyboard)
 
 
 async def handle_profile_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -180,7 +198,6 @@ async def handle_profile_message(update: Update, context: ContextTypes.DEFAULT_T
         return
     
     field = context.user_data['editing_field']
-    value = update.message.text
     
     # Get activity manager
     db_manager = context.application.bot_data.get('db_manager')
@@ -189,6 +206,30 @@ async def handle_profile_message(update: Update, context: ContextTypes.DEFAULT_T
         return
     
     activity_manager = db_manager.get_activity_manager(user_id)
+    
+    # Handle photo upload
+    if field == 'reference_photo':
+        if update.message.photo:
+            # Get the largest photo
+            photo = update.message.photo[-1]
+            file_id = photo.file_id
+            value = f"photo:{file_id}"
+        elif update.message.document:
+            # Handle document (photo)
+            file_id = update.message.document.file_id
+            value = f"photo:{file_id}"
+        elif update.message.text:
+            # URL or text
+            value = update.message.text
+        else:
+            await update.message.reply_text("Пожалуйста, отправьте фото или URL.")
+            return
+    else:
+        # Text input
+        if not update.message.text:
+            await update.message.reply_text("Пожалуйста, введите текст.")
+            return
+        value = update.message.text
     
     # Save the field
     success = activity_manager.save_profile_field(user_id, field, value)
@@ -210,3 +251,4 @@ def register_profile_handlers(application):
     application.add_handler(CallbackQueryHandler(handle_profile_callback, pattern="^profile_"))
     application.add_handler(CallbackQueryHandler(handle_profile_callback, pattern="^edit_"))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_profile_message))
+    application.add_handler(MessageHandler(filters.PHOTO | filters.DOCUMENT, handle_profile_message))
