@@ -171,10 +171,17 @@ async def handle_profile_callback(update: Update, context: ContextTypes.DEFAULT_
         if personality_type == "custom":
             # Request custom text
             context.user_data['editing_field'] = 'personality_type'
-            await context.bot.send_message(
-                chat_id=query.from_user.id,
-                text="Введите свой вариант типа личности:"
-            )
+            try:
+                await context.bot.send_message(
+                    chat_id=query.from_user.id,
+                    text="Введите свой вариант типа личности:"
+                )
+            except Exception as e:
+                # If bot can't start conversation, ask user to write first
+                await query.edit_message_text(
+                    text="Напишите мне в личные сообщения, чтобы установить тип личности: @{}"
+                    .format(context.bot.username)
+                )
         else:
             # Save selected personality type
             db_manager = context.application.bot_data.get('db_manager')
@@ -273,7 +280,7 @@ async def handle_profile_message(update: Update, context: ContextTypes.DEFAULT_T
     
     # Check if we're expecting input
     if 'editing_field' not in context.user_data:
-        return
+        return  # Return None explicitly (not awaited)
     
     field = context.user_data['editing_field']
     
