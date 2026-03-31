@@ -1,0 +1,2 @@
+2026-03-31 12:12:29,177 - __main__ - ERROR - TELEGRAM_BOT_TOKEN not found in environment variables!
+2026-03-31 12:12:29,180 - __main__ - ERROR - Looked for .env in: /home/nanoskyfox/.nanobot/workspace/kayo-bot/.env

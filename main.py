@@ -269,6 +269,19 @@ def main() -> None:
         logger.error(f"Update: {update}")
     
     application.add_error_handler(error_handler)
+    
+    # Add a handler to log ALL updates (for debugging)
+    async def log_all_updates(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Log all incoming updates."""
+        logger.info(f"[LOG_ALL] Received update: {update}")
+        logger.info(f"[LOG_ALL] Update type: {type(update)}")
+        logger.info(f"[LOG_ALL] Has message: {update.message is not None}")
+        if update.message:
+            logger.info(f"[LOG_ALL] Message text: {update.message.text}")
+            logger.info(f"[LOG_ALL] Message type: {update.message.chat.type}")
+    
+    # This will be called before any other handler
+    application.add_handler(MessageHandler(filters.ALL, log_all_updates), group=-1)
 
     # Run the bot until the user presses Ctrl-C
     try:
