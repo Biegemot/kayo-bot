@@ -179,32 +179,26 @@ class ActivityManager:
             # Reset today counts if needed
             self._maybe_reset_today(user_id)
             
-            # Get current user data
+            # Fetch user
             cursor.execute('SELECT * FROM users WHERE user_id = ?', (user_id,))
             row = cursor.fetchone()
             
             if row is None:
-                # Insert new user
                 cursor.execute('''
-                    INSERT INTO users (user_id, username, message_count, today_count, kiss_count_today, slap_count_today, last_message_date, last_active_date, last_message_ts)
-                    VALUES (?, ?, 1, 1, 0, 0, ?, ?, ?)
-                ''', (user_id, username, today, today, now_ts))
+                    INSERT INTO users (user_id, username, message_count, today_count, kiss_count_today, slap_count_today, hug_count_today, bite_count_today, pat_count_today, boop_count_today, last_message_date, last_active_date, last_message_ts)
+                    VALUES (?, ?, 1, 1, 0, 0, 0, 0, 0, 0, ?, ?, ?)
+                ''', (user_id, username or "", today, today, now_ts))
             else:
-                # Update existing user
-                last_date = row['last_message_date']
-                # If last_message_date is not today, reset today_count (but we already reset via _maybe_reset_today)
-                today_count = row['today_count'] + 1
-                
                 cursor.execute('''
                     UPDATE users
                     SET username = ?,
-                        message_count = message_count + 1,
-                        today_count = ?,
+                        message_count = COALESCE(message_count,0) + 1,
+                        today_count = COALESCE(today_count,0) + 1,
                         last_message_date = ?,
-                        last_message_ts = ?,
-                        last_active_date = ?
+                        last_active_date = ?,
+                        last_message_ts = ?
                     WHERE user_id = ?
-                ''', (username, today_count, today, now_ts, today, user_id))
+                ''', (username or "", today, today, now_ts, user_id))
             
             self.conn.commit()
         except Exception as e:
