@@ -2,6 +2,7 @@ import sqlite3
 import os
 from datetime import datetime, date
 import logging
+import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -170,26 +171,33 @@ class ActivityManager:
     def increment_message(self, user_id, username):
         """Increment message count for a user, reset today_count if new day."""
         try:
+            logger.info(f"[increment_message] Starting for user {user_id} ({username})")
             self.ensure_connection()
             cursor = self.conn.cursor()
             
             today = date.today().isoformat()
             now_ts = int(datetime.now().timestamp())
+            logger.info(f"[increment_message] Today: {today}, Timestamp: {now_ts}")
             
             # Reset today counts if needed
+            logger.info(f"[increment_message] Checking if reset needed for user {user_id}")
             self._maybe_reset_today(user_id)
             
             # Fetch user
             cursor.execute('SELECT * FROM users WHERE user_id = ?', (user_id,))
             row = cursor.fetchone()
+            logger.info(f"[increment_message] User exists: {row is not None}")
             
             if row is None:
+                logger.info(f"[increment_message] Creating new user {user_id}")
                 cursor.execute('''
                     INSERT INTO users (user_id, username, message_count, today_count, kiss_count_today, slap_count_today, hug_count_today, bite_count_today, pat_count_today, boop_count_today, last_message_date, last_active_date, last_message_ts)
                     VALUES (?, ?, 1, 1, 0, 0, 0, 0, 0, 0, ?, ?, ?)
                 ''', (user_id, username or "", today, today, now_ts))
                 logger.info(f"Created new user {user_id} with message_count=1")
             else:
+                logger.info(f"[increment_message] Updating existing user {user_id}")
+                logger.info(f"[increment_message] Current message_count: {row['message_count']}, today_count: {row['today_count']}")
                 cursor.execute('''
                     UPDATE users
                     SET username = ?,
@@ -203,8 +211,10 @@ class ActivityManager:
                 logger.info(f"Updated user {user_id}: message_count={row['message_count']} -> {row['message_count'] + 1}")
             
             self.conn.commit()
+            logger.info(f"[increment_message] Commit successful for user {user_id}")
         except Exception as e:
             logger.error(f"Error incrementing message for user {user_id}: {e}")
+            logger.error(f"[increment_message] Traceback: {traceback.format_exc()}")
 
     def increment_kiss(self, user_id):
         """Increment kiss count for a user, reset today counts if new day."""
@@ -685,18 +695,22 @@ class ActivityManager:
     def store_message(self, user_id, text):
         """Store a message for topic extraction."""
         try:
+            logger.info(f"[store_message] Starting for user {user_id}")
             self.ensure_connection()
             cursor = self.conn.cursor()
             today = date.today().isoformat()
             now_ts = int(datetime.now().timestamp())
+            logger.info(f"[store_message] Today: {today}, Timestamp: {now_ts}")
+            logger.info(f"[store_message] Text length: {len(text)}, First 50 chars: {text[:50]}...")
             cursor.execute('''
                 INSERT INTO messages (user_id, text, msg_date, msg_ts)
                 VALUES (?, ?, ?, ?)
             ''', (user_id, text[:500], today, now_ts))
             self.conn.commit()
-            logger.info(f"Stored message for user {user_id}: {text[:50]}...")
+            logger.info(f"[store_message] Stored message for user {user_id}: {text[:50]}...")
         except Exception as e:
             logger.error(f"Error storing message: {e}")
+            logger.error(f"[store_message] Traceback: {traceback.format_exc()}")
 
     def get_today_messages(self):
         """Get all message texts from today for topic extraction."""

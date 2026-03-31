@@ -155,10 +155,15 @@ async def combined_message_handler(update: Update, context: ContextTypes.DEFAULT
         chat = update.effective_chat
         user = update.effective_user
         if chat and user:
+            logger.info(f"[combined_message_handler] Chat ID: {chat.id}, User ID: {user.id}, Username: {user.username}")
             activity_manager = db_manager.get_activity_manager(chat.id)
             activity_manager.increment_message(user.id, user.username or user.first_name or "")
             # Store message text for topic extraction
             activity_manager.store_message(user.id, update.message.text)
+        else:
+            logger.warning(f"[combined_message_handler] Chat or user is None: chat={chat}, user={user}")
+    else:
+        logger.warning(f"[combined_message_handler] db_manager is None")
 
     # Handle reactions
     text = update.message.text
