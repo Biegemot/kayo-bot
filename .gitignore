@@ -80,6 +80,9 @@ config.env
 # Python version
 .python-version
 
+# Bot data (databases, user profiles, etc.)
+bot/data/
+
 # IDE
 .vscode/
 .idea/

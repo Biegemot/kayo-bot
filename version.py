@@ -14,10 +14,14 @@ def get_current_version():
         search_paths.append(Path(sys.executable).parent / 'version.txt')
         # Also look in the bot directory (for bundled version.txt)
         search_paths.append(Path(sys.executable).parent / 'bot' / 'version.txt')
+        # Also look in the current working directory
+        search_paths.append(Path.cwd() / 'version.txt')
     else:
         # Development: look next to this file, then project root
         search_paths.append(Path(__file__).parent / 'version.txt')
         search_paths.append(Path(__file__).parent.parent / 'version.txt')
+        # Also look in the current working directory
+        search_paths.append(Path.cwd() / 'version.txt')
 
     for path in search_paths:
         if path.exists():

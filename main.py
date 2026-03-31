@@ -259,6 +259,14 @@ def main() -> None:
 
     application.post_init = post_init
 
+    # Add error handler
+    async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
+        """Log errors."""
+        logger.error(f"Exception while handling an update: {context.error}")
+        logger.error(f"Update: {update}")
+    
+    application.add_error_handler(error_handler)
+
     # Run the bot until the user presses Ctrl-C
     try:
         application.run_polling(drop_pending_updates=True)

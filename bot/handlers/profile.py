@@ -162,7 +162,7 @@ async def handle_profile_callback(update: Update, context: ContextTypes.DEFAULT_
         # Field editing
         field = data.split("_", 1)[1]
         if field in FIELD_PROMPTS or field == 'personality_type':
-            await request_field_value(query.from_user.id, field, context)
+            await request_field_value(query.from_user.id, field, context, update)
     
     elif data == "edit_done":
         # Finish editing
@@ -264,7 +264,7 @@ async def show_edit_menu(user_id: int, context: ContextTypes.DEFAULT_TYPE, updat
                 logger.error(f"Can't edit message in group chat: {e2}")
 
 
-async def request_field_value(user_id: int, field: str, context: ContextTypes.DEFAULT_TYPE):
+async def request_field_value(user_id: int, field: str, context: ContextTypes.DEFAULT_TYPE, update: Update = None):
     """Request a field value from user."""
     # Store editing state
     context.user_data['editing_field'] = field
@@ -283,18 +283,42 @@ async def request_field_value(user_id: int, field: str, context: ContextTypes.DE
         
         reply_markup = InlineKeyboardMarkup(keyboard)
         
-        await context.bot.send_message(
-            chat_id=user_id,
-            text="Выберите тип личности:",
-            reply_markup=reply_markup
-        )
+        try:
+            await context.bot.send_message(
+                chat_id=user_id,
+                text="Выберите тип личности:",
+                reply_markup=reply_markup
+            )
+        except Exception as e:
+            logger.error(f"Can't send message to user {user_id}: {e}")
+            # Try to edit message in group chat
+            if update and update.callback_query:
+                try:
+                    await update.callback_query.edit_message_text(
+                        text="❌ Невозможно отправить сообщение в личку. Бот заблокирован.",
+                        reply_markup=None
+                    )
+                except Exception as e2:
+                    logger.error(f"Can't edit message in group chat: {e2}")
     else:
         # Send prompt for text input
         prompt = FIELD_PROMPTS.get(field, "Введите новое значение:")
-        await context.bot.send_message(
-            chat_id=user_id,
-            text=prompt
-        )
+        try:
+            await context.bot.send_message(
+                chat_id=user_id,
+                text=prompt
+            )
+        except Exception as e:
+            logger.error(f"Can't send message to user {user_id}: {e}")
+            # Try to edit message in group chat
+            if update and update.callback_query:
+                try:
+                    await update.callback_query.edit_message_text(
+                        text="❌ Невозможно отправить сообщение в личку. Бот заблокирован.",
+                        reply_markup=None
+                    )
+                except Exception as e2:
+                    logger.error(f"Can't edit message in group chat: {e2}")
 
 
 async def handle_profile_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
