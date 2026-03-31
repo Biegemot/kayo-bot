@@ -151,9 +151,12 @@ async def chat_member_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 async def combined_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle text messages to increment activity count and trigger reactions."""
-    logger.info(f"[combined_message_handler] Handler triggered!")
+    logger.info(f"[combined_message_handler] Handler triggered! Update type: {type(update)}")
+    logger.info(f"[combined_message_handler] Full update: {update}")
     logger.info(f"[combined_message_handler] update.message: {update.message}")
     logger.info(f"[combined_message_handler] update.message.text: {update.message.text if update.message else 'NO MESSAGE'}")
+    logger.info(f"[combined_message_handler] effective_chat: {update.effective_chat}")
+    logger.info(f"[combined_message_handler] effective_user: {update.effective_user}")
     
     # Check if message exists
     if not update.message or not update.message.text:
