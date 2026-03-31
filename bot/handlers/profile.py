@@ -98,18 +98,23 @@ async def profile_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Извините, система анкет недоступна.")
         return
     
-    activity_manager = db_manager.get_activity_manager(update.effective_chat.id)
-    profile = activity_manager.get_profile(user_id)
+    # Use user_id for profile (stored in user-specific database)
+    # But use chat_id for stats (stored in chat-specific database)
+    profile_activity_manager = db_manager.get_activity_manager(user_id)
+    profile = profile_activity_manager.get_profile(user_id)
+    
+    # Use chat_id for stats
+    chat_activity_manager = db_manager.get_activity_manager(update.effective_chat.id)
     
     # Get stats
-    stats = activity_manager.get_user_stats(user_id)
+    stats = chat_activity_manager.get_user_stats(user_id)
     if not stats:
         await update.message.reply_text("Статистика пока отсутствует. Начните чат!")
         return
     
     # Get all titles for today
-    titles = activity_manager.get_all_user_titles(user_id)
-    rank = activity_manager.get_user_rank(user_id)
+    titles = chat_activity_manager.get_all_user_titles(user_id)
+    rank = chat_activity_manager.get_user_rank(user_id)
     
     # Generate profile text
     text = await generate_profile_text(user, profile, stats, titles, rank)
@@ -205,6 +210,7 @@ async def show_edit_menu(user_id: int, context: ContextTypes.DEFAULT_TYPE):
         return
     
     # Get activity manager (use user_id as chat_id for private)
+    # Но для сохранения в правильную базу используем user_id
     activity_manager = db_manager.get_activity_manager(user_id)
     profile = activity_manager.get_profile(user_id)
     

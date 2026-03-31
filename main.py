@@ -165,7 +165,9 @@ async def combined_message_handler(update: Update, context: ContextTypes.DEFAULT
     user_mention = update.effective_user.mention_html() if update.effective_user else ""
     reaction = get_reaction(text, user_mention)
     if reaction:
-        await update.message.reply_html(reaction)
+        # Random chance to react (15%)
+        if random.random() < 0.15:
+            await update.message.reply_html(reaction)
 
 def main() -> None:
     """Start the bot."""

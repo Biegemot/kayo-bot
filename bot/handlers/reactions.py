@@ -58,10 +58,6 @@ def get_reaction(text, user_mention):
     if not matched_triggers:
         return None
     
-    # Random chance to react
-    if random.random() >= REACTION_PROBABILITY:
-        return None
-    
     # Pick a random trigger and a random reaction for it
     trigger = random.choice(matched_triggers)
     reactions = TRIGGER_REACTIONS[trigger]
