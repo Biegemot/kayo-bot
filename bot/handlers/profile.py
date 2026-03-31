@@ -329,4 +329,4 @@ def register_profile_handlers(application):
     application.add_handler(CallbackQueryHandler(handle_profile_callback, pattern="^profile_"))
     application.add_handler(CallbackQueryHandler(handle_profile_callback, pattern="^edit_"))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_profile_message))
-    application.add_handler(MessageHandler(filters.PHOTO | filters.DOCUMENT, handle_profile_message))
+    application.add_handler(MessageHandler(filters.PHOTO | filters.Document.IMAGE, handle_profile_message))
