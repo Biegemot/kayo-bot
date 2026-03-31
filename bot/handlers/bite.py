@@ -15,6 +15,6 @@ BITE_PHRASES = [
 ]
 
 
-def bite_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def bite_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle the /bite command."""
-    rp_command_handler(update, context, BITE_PHRASES, increment_callback=lambda am, uid: am.increment_bite(uid))
+    await rp_command_handler(update, context, BITE_PHRASES, increment_callback=lambda am, uid: am.increment_bite(uid))

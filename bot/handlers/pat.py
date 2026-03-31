@@ -15,6 +15,6 @@ PAT_PHRASES = [
 ]
 
 
-def pat_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def pat_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle the /pat command."""
-    rp_command_handler(update, context, PAT_PHRASES, increment_callback=lambda am, uid: am.increment_pat(uid))
+    await rp_command_handler(update, context, PAT_PHRASES, increment_callback=lambda am, uid: am.increment_pat(uid))

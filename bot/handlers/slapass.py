@@ -14,6 +14,6 @@ SLAPASS_PHRASES = [
 ]
 
 
-def slapass_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def slapass_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle the /slapass command."""
-    rp_command_handler(update, context, SLAPASS_PHRASES, increment_callback=lambda am, uid: am.increment_slap(uid))
+    await rp_command_handler(update, context, SLAPASS_PHRASES, increment_callback=lambda am, uid: am.increment_slap(uid))
