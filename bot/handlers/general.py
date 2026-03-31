@@ -7,6 +7,9 @@ from collections import Counter
 
 async def about_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Send info about the bot and its version."""
+    if not update.message:
+        return
+    
     # Try to get version from version.py first
     try:
         from version import get_current_version
@@ -35,6 +38,9 @@ async def about_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Send a list of available commands with descriptions."""
+    if not update.message:
+        return
+    
     help_text = """
     🐰 Доступные команды:
     /start - Запустить бота и увидеть приветственное сообщение
@@ -55,6 +61,9 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def top_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show top users by total message count."""
+    if not update.message:
+        return
+    
     db_manager = context.application.bot_data.get('db_manager')
     if not db_manager:
         await update.message.reply_text("Извините, отслеживание активности недоступно.")
@@ -81,6 +90,9 @@ async def top_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def today_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show top users by today's message count."""
+    if not update.message:
+        return
+    
     db_manager = context.application.bot_data.get('db_manager')
     if not db_manager:
         await update.message.reply_text("Извините, отслеживание активности недоступно.")
@@ -109,6 +121,9 @@ async def today_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def titles_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show list of all titles with descriptions."""
+    if not update.message:
+        return
+    
     titles_text = """
 🏅 Доступные титулы:
 
@@ -271,6 +286,9 @@ def _summary_topics(data):
 
 async def summarize_command(update, context):
     """Show a fun daily summary of chat activity."""
+    if not update.message:
+        return
+    
     db_manager = context.application.bot_data.get('db_manager')
     if not db_manager:
         await update.message.reply_text("Извините, отслеживание активности недоступно.")
@@ -318,6 +336,9 @@ async def summarize_command(update, context):
 
 async def update_command(update, context):
     """Check for updates and apply if available."""
+    if not update.message:
+        return
+    
     try:
         from bot.services.auto_update import check_and_apply_update, get_current_version, restart_application
 
