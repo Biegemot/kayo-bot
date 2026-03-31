@@ -230,7 +230,7 @@ class ActivityManager:
                 cursor.execute('''
                     INSERT INTO users (user_id, username, message_count, today_count, kiss_count_today, slap_count_today, last_message_date, last_active_date, last_message_ts)
                     VALUES (?, ?, 0, 0, 1, 0, ?, ?, ?)
-                ''', (user_id, "", today, today, today))
+                ''', (user_id, "", today, today, int(datetime.now().timestamp())))
             else:
                 # Update existing user
                 kiss_count = row['kiss_count_today'] + 1
@@ -266,7 +266,7 @@ class ActivityManager:
                 cursor.execute('''
                     INSERT INTO users (user_id, username, message_count, today_count, kiss_count_today, slap_count_today, last_message_date, last_active_date, last_message_ts)
                     VALUES (?, ?, 0, 0, 0, 1, ?, ?, ?)
-                ''', (user_id, "", today, today, today))
+                ''', (user_id, "", today, today, int(datetime.now().timestamp())))
             else:
                 # Update existing user
                 slap_count = row['slap_count_today'] + 1
@@ -302,7 +302,7 @@ class ActivityManager:
                 cursor.execute('''
                     INSERT INTO users (user_id, username, message_count, today_count, kiss_count_today, slap_count_today, hug_count_today, bite_count_today, pat_count_today, boop_count_today, last_message_date, last_active_date, last_message_ts)
                     VALUES (?, ?, 0, 0, 0, 0, 1, 0, 0, 0, ?, ?, ?)
-                ''', (user_id, "", today, today, today))
+                ''', (user_id, "", today, today, int(datetime.now().timestamp())))
             else:
                 # Update existing user
                 hug_count = row['hug_count_today'] + 1
@@ -338,7 +338,7 @@ class ActivityManager:
                 cursor.execute('''
                     INSERT INTO users (user_id, username, message_count, today_count, kiss_count_today, slap_count_today, hug_count_today, bite_count_today, pat_count_today, boop_count_today, last_message_date, last_active_date, last_message_ts)
                     VALUES (?, ?, 0, 0, 0, 0, 0, 1, 0, 0, ?, ?, ?)
-                ''', (user_id, "", today, today, today))
+                ''', (user_id, "", today, today, int(datetime.now().timestamp())))
             else:
                 # Update existing user
                 bite_count = row['bite_count_today'] + 1
@@ -374,7 +374,7 @@ class ActivityManager:
                 cursor.execute('''
                     INSERT INTO users (user_id, username, message_count, today_count, kiss_count_today, slap_count_today, hug_count_today, bite_count_today, pat_count_today, boop_count_today, last_message_date, last_active_date, last_message_ts)
                     VALUES (?, ?, 0, 0, 0, 0, 0, 0, 1, 0, ?, ?, ?)
-                ''', (user_id, "", today, today, today))
+                ''', (user_id, "", today, today, int(datetime.now().timestamp())))
             else:
                 # Update existing user
                 pat_count = row['pat_count_today'] + 1
@@ -410,7 +410,7 @@ class ActivityManager:
                 cursor.execute('''
                     INSERT INTO users (user_id, username, message_count, today_count, kiss_count_today, slap_count_today, hug_count_today, bite_count_today, pat_count_today, boop_count_today, last_message_date, last_active_date, last_message_ts)
                     VALUES (?, ?, 0, 0, 0, 0, 0, 0, 0, 1, ?, ?, ?)
-                ''', (user_id, "", today, today, today))
+                ''', (user_id, "", today, today, int(datetime.now().timestamp())))
             else:
                 # Update existing user
                 boop_count = row['boop_count_today'] + 1
