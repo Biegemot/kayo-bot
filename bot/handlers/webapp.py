@@ -3,7 +3,7 @@
 """
 
 import logging
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import ContextTypes, CommandHandler, CallbackQueryHandler
 
 logger = logging.getLogger(__name__)
@@ -19,10 +19,13 @@ async def webapp_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     # Создаем кнопку для открытия Web App
+    # Для Mini-App нужно использовать WebAppInfo объект
+    web_app_url = "https://your-webapp-url.com"  # Замените на реальный URL
+    
     keyboard = [
         [InlineKeyboardButton(
             "📝 Заполнить анкету",
-            web_app={"url": "https://your-webapp-url.com"}  # Замените на реальный URL
+            web_app=WebAppInfo(url=web_app_url)
         )]
     ]
     
