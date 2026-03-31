@@ -3,7 +3,7 @@ Profile system for Kayo Bot
 Allows users to create and manage their fursona profiles
 """
 import logging
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import ContextTypes, CallbackQueryHandler, CommandHandler, MessageHandler, filters
 
 logger = logging.getLogger(__name__)
@@ -41,7 +41,7 @@ PERSONALITY_TYPES = [
 ]
 
 
-async def generate_profile_text(user, profile, stats, titles, rank, max_length=1024):
+async def generate_profile_text(user, profile, max_length=1024):
     """Generate profile text with length limit."""
     # Build profile text
     profile_text = ""
@@ -57,32 +57,7 @@ async def generate_profile_text(user, profile, stats, titles, rank, max_length=1
     text = f"👤 Анкета @{user.username or user.first_name}\n\n"
     
     if profile_text:
-        text += profile_text + "\n"
-    
-    # Add stats
-    stats_text = f"📊 Общее количество сообщений: {stats['message_count']}\n"
-    stats_text += f"📅 Сообщения за сегодня: {stats['today_count']}\n"
-    stats_text += f"💋 Поцелуев сегодня: {stats['kiss_count_today']}\n"
-    stats_text += f"👋 Шлёпков сегодня: {stats['slap_count_today']}\n"
-    stats_text += f"🏆 Позиция в рейтинге: {rank}\n"
-    
-    # Add all titles
-    if titles:
-        titles_str = ", ".join(titles)
-        stats_text += f"🏅 Титулы: {titles_str}\n"
-    else:
-        stats_text += f"🏅 Титул: Активный\n"
-    
-    # Check length and truncate if needed
-    if len(text) + len(stats_text) > max_length:
-        # Calculate available space for stats
-        available = max_length - len(text) - 50  # Reserve space for "..."
-        if available > 0:
-            stats_text = stats_text[:available] + "..."
-        else:
-            stats_text = "Статистика слишком длинная..."
-    
-    text += stats_text
+        text += profile_text
     
     return text
 
@@ -99,25 +74,11 @@ async def profile_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     # Use user_id for profile (stored in user-specific database)
-    # But use chat_id for stats (stored in chat-specific database)
     profile_activity_manager = db_manager.get_activity_manager(user_id)
     profile = profile_activity_manager.get_profile(user_id)
     
-    # Use chat_id for stats
-    chat_activity_manager = db_manager.get_activity_manager(update.effective_chat.id)
-    
-    # Get stats
-    stats = chat_activity_manager.get_user_stats(user_id)
-    if not stats:
-        await update.message.reply_text("Статистика пока отсутствует. Начните чат!")
-        return
-    
-    # Get all titles for today
-    titles = chat_activity_manager.get_all_user_titles(user_id)
-    rank = chat_activity_manager.get_user_rank(user_id)
-    
-    # Generate profile text
-    text = await generate_profile_text(user, profile, stats, titles, rank)
+    # Generate profile text (without stats)
+    text = await generate_profile_text(user, profile)
     
     # Get photo if available
     photo_file_id = None
@@ -126,9 +87,10 @@ async def profile_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if ref_photo and ref_photo.startswith('photo:'):
             photo_file_id = ref_photo.split(':', 1)[1]
     
-    # Create inline keyboard
+    # Create inline keyboard with Mini-App button
+    webapp_url = f"https://biegemot.github.io/kayo-bot-webapp/?user_id={user_id}"
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("✏️ Редактировать", callback_data="profile_edit")],
+        [InlineKeyboardButton("✏️ Редактировать", web_app=WebAppInfo(url=webapp_url))],
         [InlineKeyboardButton("❌ Закрыть", callback_data="profile_close")]
     ])
     
@@ -150,9 +112,7 @@ async def handle_profile_callback(update: Update, context: ContextTypes.DEFAULT_
     
     data = query.data
     
-    if data == "profile_edit":
-        # Open edit menu (try private, fallback to group)
-        await show_edit_menu(query.from_user.id, context, update)
+
     
     elif data == "profile_close":
         # Close the message

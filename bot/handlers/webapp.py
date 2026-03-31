@@ -20,7 +20,7 @@ async def webapp_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # Создаем кнопку для открытия Web App
     # Для Mini-App нужно использовать WebAppInfo объект
-    web_app_url = "https://your-webapp-url.com"  # Замените на реальный URL
+    web_app_url = "https://biegemot.github.io/kayo-bot-webapp/"
     
     keyboard = [
         [InlineKeyboardButton(
