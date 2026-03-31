@@ -261,7 +261,7 @@ def main() -> None:
 
     # Run the bot until the user presses Ctrl-C
     try:
-        application.run_polling()
+        application.run_polling(drop_pending_updates=True)
     except Exception as e:
         logger.error(f"Failed to start the bot: {e}")
         logger.error("Please check your TELEGRAM_BOT_TOKEN and network connection.")
