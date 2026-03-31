@@ -213,7 +213,8 @@ def main() -> None:
     register_profile_handlers(application)
 
     # Register message and chat member handlers
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, combined_message_handler))
+    # Обрабатываем все текстовые сообщения, включая команды
+    application.add_handler(MessageHandler(filters.TEXT, combined_message_handler))
     from telegram.ext import ChatMemberHandler
     application.add_handler(ChatMemberHandler(chat_member_handler, ChatMemberHandler.MY_CHAT_MEMBER))
 
