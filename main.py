@@ -211,6 +211,10 @@ def main() -> None:
     # Register profile handlers
     from bot.handlers.profile import register_profile_handlers
     register_profile_handlers(application)
+    
+    # Register webapp handlers
+    from bot.handlers.webapp import register_webapp_handlers
+    register_webapp_handlers(application)
 
     # Register message and chat member handlers
     # Обрабатываем все текстовые сообщения, включая команды
@@ -233,6 +237,7 @@ def main() -> None:
         BotCommand("top", "Топ по сообщениям"),
         BotCommand("today", "Активность за сегодня"),
         BotCommand("me", "Моя анкета и статистика"),
+        BotCommand("webapp", "Открыть Mini-App для анкеты"),
         BotCommand("titles", "Список титулов"),
         BotCommand("summarize", "Итоги дня"),
         BotCommand("update", "Проверить обновления"),
