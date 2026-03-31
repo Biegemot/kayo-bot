@@ -4,7 +4,7 @@ Allows users to create and manage their fursona profiles
 """
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ContextTypes, CallbackQueryHandler, MessageHandler, filters
+from telegram.ext import ContextTypes, CallbackQueryHandler, CommandHandler, MessageHandler, filters
 
 logger = logging.getLogger(__name__)
 
