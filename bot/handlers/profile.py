@@ -234,11 +234,17 @@ async def show_edit_menu(user_id: int, context: ContextTypes.DEFAULT_TYPE):
     
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    await context.bot.send_message(
-        chat_id=user_id,
-        text=text,
-        reply_markup=reply_markup
-    )
+    try:
+        await context.bot.send_message(
+            chat_id=user_id,
+            text=text,
+            reply_markup=reply_markup
+        )
+    except Exception as e:
+        # If bot can't initiate conversation, send message in the original chat
+        logger.error(f"Can't send message to user {user_id}: {e}")
+        # Note: We can't send to the original chat because we don't have the update object here
+        # This is a limitation of the current design
 
 
 async def request_field_value(user_id: int, field: str, context: ContextTypes.DEFAULT_TYPE):

@@ -136,6 +136,7 @@ class ActivityManager:
     def _maybe_reset_today(self, user_id):
         """Reset today counts if the last active date is not today."""
         try:
+            self.ensure_connection()
             today = date.today().isoformat()
             
             # Get current user data

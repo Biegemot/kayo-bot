@@ -12,6 +12,8 @@ def get_current_version():
     if getattr(sys, 'frozen', False):
         # PyInstaller: look next to the .exe
         search_paths.append(Path(sys.executable).parent / 'version.txt')
+        # Also look in the bot directory (for bundled version.txt)
+        search_paths.append(Path(sys.executable).parent / 'bot' / 'version.txt')
     else:
         # Development: look next to this file, then project root
         search_paths.append(Path(__file__).parent / 'version.txt')
