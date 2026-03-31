@@ -57,7 +57,7 @@ from bot.handlers.pat import pat_command
 from bot.handlers.boop import boop_command
 from bot.handlers.kiss import kiss_command
 from bot.handlers.slapass import slapass_command
-from bot.handlers.general import about_command, help_command, top_command, today_command, titles_command, summarize_command, update_command
+from bot.handlers.general import top_command, today_command, titles_command, summarize_command, update_command
 from bot.handlers.reactions import get_reaction
 from bot.services.db_manager import DBManager
 from bot.services.auto_update import setup_auto_update
@@ -146,6 +146,10 @@ async def chat_member_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 async def combined_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle text messages to increment activity count and trigger reactions."""
+    # Check if message exists
+    if not update.message or not update.message.text:
+        return
+    
     db_manager = context.application.bot_data.get('db_manager')
     if db_manager:
         chat = update.effective_chat
@@ -154,16 +158,14 @@ async def combined_message_handler(update: Update, context: ContextTypes.DEFAULT
             activity_manager = db_manager.get_activity_manager(chat.id)
             activity_manager.increment_message(user.id, user.username or user.first_name or "")
             # Store message text for topic extraction
-            if update.message and update.message.text:
-                activity_manager.store_message(user.id, update.message.text)
+            activity_manager.store_message(user.id, update.message.text)
 
     # Handle reactions
-    text = update.message.text if update.message else None
-    if text:
-        user_mention = update.effective_user.mention_html() if update.effective_user else ""
-        reaction = get_reaction(text, user_mention)
-        if reaction:
-            await update.message.reply_text(reaction)
+    text = update.message.text
+    user_mention = update.effective_user.mention_html() if update.effective_user else ""
+    reaction = get_reaction(text, user_mention)
+    if reaction:
+        await update.message.reply_html(reaction)
 
 def main() -> None:
     """Start the bot."""

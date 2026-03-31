@@ -1,6 +1,8 @@
 """Automatic reactions to trigger words in messages."""
 import random
 
+# Constants
+REACTION_PROBABILITY = 0.15
 
 # Trigger words mapped to reaction themes
 TRIGGER_REACTIONS = {
@@ -45,10 +47,6 @@ TRIGGER_REACTIONS = {
         "<i>Кайо грустно повесил ушки</i>",
     ],
 }
-
-# Reaction probability (15%)
-REACTION_PROBABILITY = 0.15
-
 
 def get_reaction(text, user_mention):
     """Returns a random reaction if trigger word found, else None."""

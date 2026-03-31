@@ -1,8 +1,9 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 from bot.services.db_manager import DBManager
-import os
-import asyncio
+import random
+import re
+from collections import Counter
 
 def about_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Send info about the bot and its version."""
@@ -139,13 +140,6 @@ def titles_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 Вопроситель — много вопросов
 """
     update.message.reply_text(titles_text.strip())
-
-
-import random
-import re
-import sys
-import os
-from collections import Counter
 
 
 # Stop words for topic extraction (Russian)
