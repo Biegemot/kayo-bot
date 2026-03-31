@@ -151,9 +151,8 @@ async def handle_profile_callback(update: Update, context: ContextTypes.DEFAULT_
     data = query.data
     
     if data == "profile_edit":
-        # Open private edit menu
-        await show_edit_menu(query.from_user.id, context)
-        await query.edit_message_text(text="Меню редактирования открыто в личном чате.")
+        # Open edit menu (try private, fallback to group)
+        await show_edit_menu(query.from_user.id, context, update)
     
     elif data == "profile_close":
         # Close the message
@@ -195,18 +194,23 @@ async def handle_profile_callback(update: Update, context: ContextTypes.DEFAULT_
                 activity_manager.save_profile_field(query.from_user.id, 'personality_type', personality_type)
             
             # Show updated menu
-            await show_edit_menu(query.from_user.id, context)
-            await query.delete_message()
+            await show_edit_menu(query.from_user.id, context, update)
 
 
-async def show_edit_menu(user_id: int, context: ContextTypes.DEFAULT_TYPE):
-    """Show edit menu in private chat."""
+async def show_edit_menu(user_id: int, context: ContextTypes.DEFAULT_TYPE, update: Update = None):
+    """Show edit menu in private chat or edit message in group chat."""
     db_manager = context.application.bot_data.get('db_manager')
     if not db_manager:
-        await context.bot.send_message(
-            chat_id=user_id,
-            text="Извините, система анкет недоступна."
-        )
+        if update and update.message:
+            await update.message.reply_text("Извините, система анкет недоступна.")
+        else:
+            try:
+                await context.bot.send_message(
+                    chat_id=user_id,
+                    text="Извините, система анкет недоступна."
+                )
+            except Exception as e:
+                logger.error(f"Can't send message to user {user_id}: {e}")
         return
     
     # Get activity manager (use user_id as chat_id for private)
@@ -241,16 +245,23 @@ async def show_edit_menu(user_id: int, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     try:
+        # Try to send to private chat first
         await context.bot.send_message(
             chat_id=user_id,
             text=text,
             reply_markup=reply_markup
         )
     except Exception as e:
-        # If bot can't initiate conversation, send message in the original chat
+        # If bot can't initiate conversation, try to edit message in group chat
         logger.error(f"Can't send message to user {user_id}: {e}")
-        # Note: We can't send to the original chat because we don't have the update object here
-        # This is a limitation of the current design
+        if update and update.callback_query:
+            try:
+                await update.callback_query.edit_message_text(
+                    text=text,
+                    reply_markup=reply_markup
+                )
+            except Exception as e2:
+                logger.error(f"Can't edit message in group chat: {e2}")
 
 
 async def request_field_value(user_id: int, field: str, context: ContextTypes.DEFAULT_TYPE):
