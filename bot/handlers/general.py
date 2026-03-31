@@ -5,7 +5,7 @@ import random
 import re
 from collections import Counter
 
-def about_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def about_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Send info about the bot and its version."""
     # Try to get version from version.py first
     try:
@@ -31,9 +31,9 @@ def about_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     Дружелюбный пушистый кролик-бот, который отслеживает активность и реагирует на сообщения.
     """
-    update.message.reply_text(about_text.strip())
+    await update.message.reply_text(about_text.strip())
 
-def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Send a list of available commands with descriptions."""
     help_text = """
     🐰 Доступные команды:
@@ -51,24 +51,24 @@ def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     /me [@username] - Посмотреть статистику и титул себя или другого пользователя
     /titles - Посмотреть список всех доступных титулов
     """
-    update.message.reply_text(help_text.strip())
+    await update.message.reply_text(help_text.strip())
 
-def top_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def top_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show top users by total message count."""
     db_manager = context.application.bot_data.get('db_manager')
     if not db_manager:
-        update.message.reply_text("Извините, отслеживание активности недоступно.")
+        await update.message.reply_text("Извините, отслеживание активности недоступно.")
         return
     
     chat = update.effective_chat
     if not chat:
-        update.message.reply_text("Извините, не удалось определить чат.")
+        await update.message.reply_text("Извините, не удалось определить чат.")
         return
     
     activity_manager = db_manager.get_activity_manager(chat.id)
     top_users = activity_manager.get_top(limit=10)
     if not top_users:
-        update.message.reply_text("Данные об активности пока отсутствуют.")
+        await update.message.reply_text("Данные об активности пока отсутствуют.")
         return
     
     message = "🥕 Топ болтунов:\n\n"
@@ -77,24 +77,24 @@ def top_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         medal = medals[i-1] if i <= 3 else f"{i}."
         message += f"{medal} {user['username'] or user['user_id']}: {user['message_count']} сообщений\n"
     
-    update.message.reply_text(message)
+    await update.message.reply_text(message)
 
-def today_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def today_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show top users by today's message count."""
     db_manager = context.application.bot_data.get('db_manager')
     if not db_manager:
-        update.message.reply_text("Извините, отслеживание активности недоступно.")
+        await update.message.reply_text("Извините, отслеживание активности недоступно.")
         return
     
     chat = update.effective_chat
     if not chat:
-        update.message.reply_text("Извините, не удалось определить чат.")
+        await update.message.reply_text("Извините, не удалось определить чат.")
         return
     
     activity_manager = db_manager.get_activity_manager(chat.id)
     top_users = activity_manager.get_today_top(limit=10)
     if not top_users:
-        update.message.reply_text("Данных об активности за сегодня пока нет.")
+        await update.message.reply_text("Данных об активности за сегодня пока нет.")
         return
     
     message = "🥕 Активность за сегодня:\n\n"
@@ -103,11 +103,11 @@ def today_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         medal = medals[i-1] if i <= 3 else f"{i}."
         message += f"{medal} {user['username'] or user['user_id']}: {user['today_count']} сообщений сегодня\n"
     
-    update.message.reply_text(message)
+    await update.message.reply_text(message)
 
 # me_stats_command removed - functionality moved to profile.py
 
-def titles_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def titles_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show list of all titles with descriptions."""
     titles_text = """
 🏅 Доступные титулы:
@@ -139,7 +139,7 @@ def titles_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 Эмодзи-мастер — много эмодзи в сообщениях
 Вопроситель — много вопросов
 """
-    update.message.reply_text(titles_text.strip())
+    await update.message.reply_text(titles_text.strip())
 
 
 # Stop words for topic extraction (Russian)
@@ -269,16 +269,16 @@ def _summary_topics(data):
     return f"\nЧаще всего обсуждали: {', '.join(data['topics'])}."
 
 
-def summarize_command(update, context):
+async def summarize_command(update, context):
     """Show a fun daily summary of chat activity."""
     db_manager = context.application.bot_data.get('db_manager')
     if not db_manager:
-        update.message.reply_text("Извините, отслеживание активности недоступно.")
+        await update.message.reply_text("Извините, отслеживание активности недоступно.")
         return
 
     chat = update.effective_chat
     if not chat:
-        update.message.reply_text("Извините, не удалось определить чат.")
+        await update.message.reply_text("Извините, не удалось определить чат.")
         return
 
     activity_manager = db_manager.get_activity_manager(chat.id)
@@ -286,7 +286,7 @@ def summarize_command(update, context):
     # Gather data
     today_top = activity_manager.get_today_top(limit=5)
     if not today_top:
-        update.message.reply_text("📊 Сегодня пока тихо... Никто ничего не написал.")
+        await update.message.reply_text("📊 Сегодня пока тихо... Никто ничего не написал.")
         return
 
     total = sum(u['today_count'] for u in today_top)
@@ -313,21 +313,21 @@ def summarize_command(update, context):
     template = random.choice(SUMMARY_TEMPLATES)
     result = template(data)
 
-    update.message.reply_text(result.strip())
+    await update.message.reply_text(result.strip())
 
 
-def update_command(update, context):
+async def update_command(update, context):
     """Check for updates and apply if available."""
     try:
         from bot.services.auto_update import check_and_apply_update, get_current_version, restart_application
 
         current = get_current_version()
-        update.message.reply_text(f"🔄 Проверяю обновления... (текущая: v{current})")
+        await update.message.reply_text(f"🔄 Проверяю обновления... (текущая: v{current})")
 
         updated, msg = check_and_apply_update(force=True)
 
         if updated:
-            update.message.reply_text(f"✅ {msg}\nПерезапускаюсь...")
+            await update.message.reply_text(f"✅ {msg}\nПерезапускаюсь...")
             # Give time for the message to be sent
             import threading
             def delayed_restart():
@@ -336,7 +336,7 @@ def update_command(update, context):
                 restart_application()
             threading.Thread(target=delayed_restart, daemon=True).start()
         else:
-            update.message.reply_text(f"ℹ️ {msg}")
+            await update.message.reply_text(f"ℹ️ {msg}")
 
     except Exception as e:
-        update.message.reply_text(f"❌ Ошибка при обновлении: {e}")
+        await update.message.reply_text(f"❌ Ошибка при обновлении: {e}")
