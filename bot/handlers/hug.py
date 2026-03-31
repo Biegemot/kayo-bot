@@ -16,4 +16,4 @@ HUG_PHRASES = [
 
 def hug_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle the /hug command."""
-    rp_command_handler(update, context, HUG_PHRASES)
+    rp_command_handler(update, context, HUG_PHRASES, increment_callback=lambda am, uid: am.increment_hug(uid))

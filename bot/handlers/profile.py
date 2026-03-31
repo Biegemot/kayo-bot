@@ -41,7 +41,7 @@ PERSONALITY_TYPES = [
 ]
 
 
-async def generate_profile_text(user, profile, stats, title, rank, max_length=1024):
+async def generate_profile_text(user, profile, stats, titles, rank, max_length=1024):
     """Generate profile text with length limit."""
     # Build profile text
     profile_text = ""
@@ -65,7 +65,13 @@ async def generate_profile_text(user, profile, stats, title, rank, max_length=10
     stats_text += f"💋 Поцелуев сегодня: {stats['kiss_count_today']}\n"
     stats_text += f"👋 Шлёпков сегодня: {stats['slap_count_today']}\n"
     stats_text += f"🏆 Позиция в рейтинге: {rank}\n"
-    stats_text += f"🏅 Титул: {title}\n"
+    
+    # Add all titles
+    if titles:
+        titles_str = ", ".join(titles)
+        stats_text += f"🏅 Титулы: {titles_str}\n"
+    else:
+        stats_text += f"🏅 Титул: Активный\n"
     
     # Check length and truncate if needed
     if len(text) + len(stats_text) > max_length:
@@ -101,11 +107,12 @@ async def profile_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Статистика пока отсутствует. Начните чат!")
         return
     
-    title = activity_manager.get_dynamic_title(user_id)
+    # Get all titles for today
+    titles = activity_manager.get_all_user_titles(user_id)
     rank = activity_manager.get_user_rank(user_id)
     
     # Generate profile text
-    text = await generate_profile_text(user, profile, stats, title, rank)
+    text = await generate_profile_text(user, profile, stats, titles, rank)
     
     # Get photo if available
     photo_file_id = None

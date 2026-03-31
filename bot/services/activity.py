@@ -74,6 +74,26 @@ class ActivityManager:
             if 'slap_count_today' not in columns:
                 cursor.execute('ALTER TABLE users ADD COLUMN slap_count_today INTEGER DEFAULT 0')
                 logger.info("Added slap_count_today column to users table")
+            
+            # Add hug_count_today if it doesn't exist
+            if 'hug_count_today' not in columns:
+                cursor.execute('ALTER TABLE users ADD COLUMN hug_count_today INTEGER DEFAULT 0')
+                logger.info("Added hug_count_today column to users table")
+            
+            # Add bite_count_today if it doesn't exist
+            if 'bite_count_today' not in columns:
+                cursor.execute('ALTER TABLE users ADD COLUMN bite_count_today INTEGER DEFAULT 0')
+                logger.info("Added bite_count_today column to users table")
+            
+            # Add pat_count_today if it doesn't exist
+            if 'pat_count_today' not in columns:
+                cursor.execute('ALTER TABLE users ADD COLUMN pat_count_today INTEGER DEFAULT 0')
+                logger.info("Added pat_count_today column to users table")
+            
+            # Add boop_count_today if it doesn't exist
+            if 'boop_count_today' not in columns:
+                cursor.execute('ALTER TABLE users ADD COLUMN boop_count_today INTEGER DEFAULT 0')
+                logger.info("Added boop_count_today column to users table")
                 
             # Add last_active_date if it doesn't exist
             if 'last_active_date' not in columns:
@@ -98,6 +118,17 @@ class ActivityManager:
             ''')
             logger.info("Created user_profiles table")
             
+            # Create user_titles table if it doesn't exist
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS user_titles (
+                    user_id INTEGER,
+                    title TEXT,
+                    date TEXT,
+                    PRIMARY KEY (user_id, date)
+                )
+            ''')
+            logger.info("Created user_titles table")
+            
             self.conn.commit()
         except Exception as e:
             logger.error(f"Error migrating schema: {e}")
@@ -109,7 +140,7 @@ class ActivityManager:
             
             # Get current user data
             cursor = self.conn.cursor()
-            cursor.execute('SELECT last_active_date, today_count, kiss_count_today, slap_count_today FROM users WHERE user_id = ?', (user_id,))
+            cursor.execute('SELECT last_active_date, today_count, kiss_count_today, slap_count_today, hug_count_today, bite_count_today, pat_count_today, boop_count_today FROM users WHERE user_id = ?', (user_id,))
             row = cursor.fetchone()
             
             if row is None:
@@ -124,6 +155,10 @@ class ActivityManager:
                     SET today_count = 0,
                         kiss_count_today = 0,
                         slap_count_today = 0,
+                        hug_count_today = 0,
+                        bite_count_today = 0,
+                        pat_count_today = 0,
+                        boop_count_today = 0,
                         last_active_date = ?
                     WHERE user_id = ?
                 ''', (today, user_id))
@@ -246,6 +281,150 @@ class ActivityManager:
         except Exception as e:
             logger.error(f"Error incrementing slap for user {user_id}: {e}")
 
+    def increment_hug(self, user_id):
+        """Increment hug count for a user, reset today counts if new day."""
+        try:
+            self.ensure_connection()
+            cursor = self.conn.cursor()
+            
+            today = date.today().isoformat()
+            
+            # Reset today counts if needed
+            self._maybe_reset_today(user_id)
+            
+            # Get current user data
+            cursor.execute('SELECT * FROM users WHERE user_id = ?', (user_id,))
+            row = cursor.fetchone()
+            
+            if row is None:
+                # Insert new user with default values
+                cursor.execute('''
+                    INSERT INTO users (user_id, username, message_count, today_count, kiss_count_today, slap_count_today, hug_count_today, bite_count_today, pat_count_today, boop_count_today, last_message_date, last_active_date, last_message_ts)
+                    VALUES (?, ?, 0, 0, 0, 0, 1, 0, 0, 0, ?, ?, ?)
+                ''', (user_id, "", today, today, today))
+            else:
+                # Update existing user
+                hug_count = row['hug_count_today'] + 1
+                
+                cursor.execute('''
+                    UPDATE users
+                    SET hug_count_today = ?,
+                        last_active_date = ?
+                    WHERE user_id = ?
+                ''', (hug_count, today, user_id))
+            
+            self.conn.commit()
+        except Exception as e:
+            logger.error(f"Error incrementing hug for user {user_id}: {e}")
+
+    def increment_bite(self, user_id):
+        """Increment bite count for a user, reset today counts if new day."""
+        try:
+            self.ensure_connection()
+            cursor = self.conn.cursor()
+            
+            today = date.today().isoformat()
+            
+            # Reset today counts if needed
+            self._maybe_reset_today(user_id)
+            
+            # Get current user data
+            cursor.execute('SELECT * FROM users WHERE user_id = ?', (user_id,))
+            row = cursor.fetchone()
+            
+            if row is None:
+                # Insert new user with default values
+                cursor.execute('''
+                    INSERT INTO users (user_id, username, message_count, today_count, kiss_count_today, slap_count_today, hug_count_today, bite_count_today, pat_count_today, boop_count_today, last_message_date, last_active_date, last_message_ts)
+                    VALUES (?, ?, 0, 0, 0, 0, 0, 1, 0, 0, ?, ?, ?)
+                ''', (user_id, "", today, today, today))
+            else:
+                # Update existing user
+                bite_count = row['bite_count_today'] + 1
+                
+                cursor.execute('''
+                    UPDATE users
+                    SET bite_count_today = ?,
+                        last_active_date = ?
+                    WHERE user_id = ?
+                ''', (bite_count, today, user_id))
+            
+            self.conn.commit()
+        except Exception as e:
+            logger.error(f"Error incrementing bite for user {user_id}: {e}")
+
+    def increment_pat(self, user_id):
+        """Increment pat count for a user, reset today counts if new day."""
+        try:
+            self.ensure_connection()
+            cursor = self.conn.cursor()
+            
+            today = date.today().isoformat()
+            
+            # Reset today counts if needed
+            self._maybe_reset_today(user_id)
+            
+            # Get current user data
+            cursor.execute('SELECT * FROM users WHERE user_id = ?', (user_id,))
+            row = cursor.fetchone()
+            
+            if row is None:
+                # Insert new user with default values
+                cursor.execute('''
+                    INSERT INTO users (user_id, username, message_count, today_count, kiss_count_today, slap_count_today, hug_count_today, bite_count_today, pat_count_today, boop_count_today, last_message_date, last_active_date, last_message_ts)
+                    VALUES (?, ?, 0, 0, 0, 0, 0, 0, 1, 0, ?, ?, ?)
+                ''', (user_id, "", today, today, today))
+            else:
+                # Update existing user
+                pat_count = row['pat_count_today'] + 1
+                
+                cursor.execute('''
+                    UPDATE users
+                    SET pat_count_today = ?,
+                        last_active_date = ?
+                    WHERE user_id = ?
+                ''', (pat_count, today, user_id))
+            
+            self.conn.commit()
+        except Exception as e:
+            logger.error(f"Error incrementing pat for user {user_id}: {e}")
+
+    def increment_boop(self, user_id):
+        """Increment boop count for a user, reset today counts if new day."""
+        try:
+            self.ensure_connection()
+            cursor = self.conn.cursor()
+            
+            today = date.today().isoformat()
+            
+            # Reset today counts if needed
+            self._maybe_reset_today(user_id)
+            
+            # Get current user data
+            cursor.execute('SELECT * FROM users WHERE user_id = ?', (user_id,))
+            row = cursor.fetchone()
+            
+            if row is None:
+                # Insert new user with default values
+                cursor.execute('''
+                    INSERT INTO users (user_id, username, message_count, today_count, kiss_count_today, slap_count_today, hug_count_today, bite_count_today, pat_count_today, boop_count_today, last_message_date, last_active_date, last_message_ts)
+                    VALUES (?, ?, 0, 0, 0, 0, 0, 0, 0, 1, ?, ?, ?)
+                ''', (user_id, "", today, today, today))
+            else:
+                # Update existing user
+                boop_count = row['boop_count_today'] + 1
+                
+                cursor.execute('''
+                    UPDATE users
+                    SET boop_count_today = ?,
+                        last_active_date = ?
+                    WHERE user_id = ?
+                ''', (boop_count, today, user_id))
+            
+            self.conn.commit()
+        except Exception as e:
+            logger.error(f"Error incrementing boop for user {user_id}: {e}")
+
     def get_top(self, limit=10):
         """Get top users by total message count."""
         try:
@@ -322,7 +501,7 @@ class ActivityManager:
             self.ensure_connection()
             cursor = self.conn.cursor()
             cursor.execute('''
-                SELECT user_id, username, message_count, today_count, kiss_count_today, slap_count_today, last_message_date, last_message_ts
+                SELECT user_id, username, message_count, today_count, kiss_count_today, slap_count_today, hug_count_today, bite_count_today, pat_count_today, boop_count_today, last_message_date, last_message_ts
                 FROM users
                 WHERE user_id = ?
             ''', (user_id,))
@@ -337,35 +516,92 @@ class ActivityManager:
     def get_dynamic_title(self, user_id):
         """Get a dynamic title based on actions and message counts."""
         try:
+            # Update titles for today
+            titles = self.determine_titles_today(user_id)
+            for title in titles:
+                self.save_user_title(user_id, title)
+            
             title = self.get_user_title(user_id)
             return title
         except Exception as e:
             logger.error(f"Error getting dynamic title for user {user_id}: {e}")
             return "Пользователь"
 
-    def get_user_title(self, user_id):
-        """Determine user's title based on action and message statistics."""
+    def get_user_titles(self, user_id):
+        """Get all titles for user today."""
+        try:
+            self.ensure_connection()
+            cursor = self.conn.cursor()
+            today = date.today().isoformat()
+            cursor.execute('SELECT title FROM user_titles WHERE user_id = ? AND date = ?', (user_id, today))
+            return [row['title'] for row in cursor.fetchall()]
+        except Exception as e:
+            logger.error(f"Error getting titles for user {user_id}: {e}")
+            return []
+
+    def save_user_title(self, user_id, title):
+        """Save a title for user today."""
+        try:
+            self.ensure_connection()
+            cursor = self.conn.cursor()
+            today = date.today().isoformat()
+            cursor.execute('INSERT OR REPLACE INTO user_titles (user_id, title, date) VALUES (?, ?, ?)', (user_id, title, today))
+            self.conn.commit()
+        except Exception as e:
+            logger.error(f"Error saving title for user {user_id}: {e}")
+
+    def get_all_titles_for_user(self, user_id):
+        """Get all titles for user (all time)."""
+        try:
+            self.ensure_connection()
+            cursor = self.conn.cursor()
+            cursor.execute('SELECT DISTINCT title FROM user_titles WHERE user_id = ? ORDER BY date DESC', (user_id,))
+            return [row['title'] for row in cursor.fetchall()]
+        except Exception as e:
+            logger.error(f"Error getting all titles for user {user_id}: {e}")
+            return []
+
+    def determine_titles_today(self, user_id):
+        """Determine all titles for user today based on action and message statistics."""
         try:
             stats = self.get_user_stats(user_id)
             if not stats:
-                return "Новый пользователь"
+                return []
             
-            # Action-based titles have priority
+            titles = []
+            
+            # Action-based titles
             # Check if user is top slapper today
             top_slap = self.get_slap_top_today(limit=1)
             if top_slap and top_slap[0]['user_id'] == user_id and top_slap[0]['slap_count_today'] > 0:
-                return "Хорни"
+                titles.append("Шлёпало")
             
             # Check if user is top kisser today
             top_kiss = self.get_kiss_top_today(limit=1)
             if top_kiss and top_kiss[0]['user_id'] == user_id and top_kiss[0]['kiss_count_today'] > 0:
-                return "Романтик"
+                titles.append("Поцелуйчик")
+            
+            # Check hug count
+            if stats.get('hug_count_today', 0) > 10:
+                titles.append("Обнимашка")
+            
+            # Check bite count
+            if stats.get('bite_count_today', 0) > 10:
+                titles.append("Злюка")
+            
+            # Check pat count
+            if stats.get('pat_count_today', 0) > 10:
+                titles.append("Ласковый")
+            
+            # Check boop count
+            if stats.get('boop_count_today', 0) > 10:
+                titles.append("Няшный")
             
             # Message-based titles
             # Check if user is top chatter today
             top_today = self.get_today_top(limit=1)
             if top_today and top_today[0]['user_id'] == user_id and top_today[0]['today_count'] > 0:
-                return "Болтун дня"
+                titles.append("Болтун дня")
             
             # Time-based titles
             last_ts = stats['last_message_ts']
@@ -378,23 +614,36 @@ class ActivityManager:
                 days_since_last = 999  # never posted
             
             if 22 <= hour <= 23 or 0 <= hour <= 4:
-                return "Ночной житель"
+                titles.append("Ночной житель")
             elif 5 <= hour <= 11:
-                return "Ранний зверь"
+                titles.append("Ранний зверь")
             
             # Low message count but active today
             if stats['message_count'] < 10 and stats['today_count'] > 0:
-                return "Тихий, но опасный"
+                titles.append("Тихий, но опасный")
             
             # Inactive for a long time
             if days_since_last > 7:
-                return "Призрак"
+                titles.append("Призрак")
             
-            # Default
-            return "Активный"
+            return titles
         except Exception as e:
-            logger.error(f"Error determining title for user {user_id}: {e}")
-            return "Пользователь"
+            logger.error(f"Error determining titles for user {user_id}: {e}")
+            return []
+
+    def get_user_title(self, user_id):
+        """Get the primary title for user today."""
+        titles = self.get_user_titles(user_id)
+        if titles:
+            return titles[0]
+        return "Активный"
+
+    def get_all_user_titles(self, user_id):
+        """Get all titles for user today."""
+        titles = self.get_user_titles(user_id)
+        if titles:
+            return titles
+        return ["Активный"]
 
     def get_user_rank(self, user_id):
         """Get user's rank based on total messages."""

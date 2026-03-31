@@ -17,4 +17,4 @@ BOOP_PHRASES = [
 
 def boop_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle the /boop command."""
-    rp_command_handler(update, context, BOOP_PHRASES)
+    rp_command_handler(update, context, BOOP_PHRASES, increment_callback=lambda am, uid: am.increment_boop(uid))
