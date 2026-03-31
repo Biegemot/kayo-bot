@@ -188,6 +188,7 @@ class ActivityManager:
                     INSERT INTO users (user_id, username, message_count, today_count, kiss_count_today, slap_count_today, hug_count_today, bite_count_today, pat_count_today, boop_count_today, last_message_date, last_active_date, last_message_ts)
                     VALUES (?, ?, 1, 1, 0, 0, 0, 0, 0, 0, ?, ?, ?)
                 ''', (user_id, username or "", today, today, now_ts))
+                logger.info(f"Created new user {user_id} with message_count=1")
             else:
                 cursor.execute('''
                     UPDATE users
@@ -199,6 +200,7 @@ class ActivityManager:
                         last_message_ts = ?
                     WHERE user_id = ?
                 ''', (username or "", today, today, now_ts, user_id))
+                logger.info(f"Updated user {user_id}: message_count={row['message_count']} -> {row['message_count'] + 1}")
             
             self.conn.commit()
         except Exception as e:
@@ -692,6 +694,7 @@ class ActivityManager:
                 VALUES (?, ?, ?, ?)
             ''', (user_id, text[:500], today, now_ts))
             self.conn.commit()
+            logger.info(f"Stored message for user {user_id}: {text[:50]}...")
         except Exception as e:
             logger.error(f"Error storing message: {e}")
 
