@@ -133,28 +133,34 @@ def add_log(message):
 def read_bot_output(proc):
     """Read bot output in background thread."""
     global bot_status
-    # Read stdout
+    # Read combined stdout/stderr
     while proc and proc.poll() is None:
         try:
             line = proc.stdout.readline()
             if line:
                 line = line.rstrip()
                 if line:
-                    add_log(line)
+                    # Check if line contains error indicators
+                    if ' - ERROR - ' in line or ' - CRITICAL - ' in line or 'Traceback' in line or 'PYI-' in line:
+                        add_log(colored(f"ERR: {line}", Colors.RED))
+                    else:
+                        add_log(line)
         except Exception:
             break
-    # Read remaining stderr on exit - filter out INFO logs
+    # Read remaining output on exit
     if proc:
         try:
-            stderr = proc.stderr.read()
-            if stderr:
-                for err_line in stderr.strip().split('\n'):
-                    err_line = err_line.strip()
-                    if not err_line:
+            remaining = proc.stdout.read()
+            if remaining:
+                for line in remaining.strip().split('\n'):
+                    line = line.strip()
+                    if not line:
                         continue
-                    # Only show actual errors, skip INFO/DEBUG logs
-                    if ' - ERROR - ' in err_line or ' - CRITICAL - ' in err_line or 'Traceback' in err_line or 'PYI-' in err_line:
-                        add_log(colored(f"ERR: {err_line}", Colors.RED))
+                    # Check if line contains error indicators
+                    if ' - ERROR - ' in line or ' - CRITICAL - ' in line or 'Traceback' in line or 'PYI-' in line:
+                        add_log(colored(f"ERR: {line}", Colors.RED))
+                    else:
+                        add_log(line)
         except Exception:
             pass
     bot_status = "stopped"
@@ -182,7 +188,7 @@ def start_bot():
             bot_process = subprocess.Popen(
                 [sys.executable, "--run-bot"],
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
                 text=True,
                 bufsize=1,
                 cwd=str(BASE_DIR)
@@ -192,7 +198,7 @@ def start_bot():
             bot_process = subprocess.Popen(
                 [sys.executable, str(BASE_DIR / "main.py")],
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
                 text=True,
                 bufsize=1,
                 cwd=str(BASE_DIR)
