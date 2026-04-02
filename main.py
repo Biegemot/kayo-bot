@@ -6,6 +6,7 @@ On Linux / dev mode: runs bot directly.
 """
 import os
 import sys
+import random
 import logging
 from pathlib import Path
 from dotenv import load_dotenv
@@ -29,17 +30,11 @@ if __name__ == '__main__' and getattr(sys, 'frozen', False) and '--run-bot' not 
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
-# Enable logging
-log_file = BASE_DIR / "bot.log"
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO,
-    handlers=[
-        logging.FileHandler(log_file),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
+# Импортируем продвинутую систему логирования
+from bot.logging import setup_logging, log_function_call
+
+# Настраиваем логирование
+logger = setup_logging()
 
 # Get the Telegram bot token from environment variables
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
@@ -68,16 +63,21 @@ from bot.services.db_manager import DBManager
 from bot.services.auto_update import setup_auto_update
 
 # Define command handlers
+@log_function_call
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /start is issued."""
     user = update.effective_user
+    logger.log_command("start", user.id, update.effective_chat.id if update.effective_chat else 0)
     await update.message.reply_html(
         rf"Привет {user.mention_html()}! Я Кайо, твой дружелюбный пушистый кролик-бот. "
         "Используй /help, чтобы увидеть, что я могу."
     )
 
+@log_function_call
 async def help_command_wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /help is issued."""
+    user = update.effective_user
+    logger.log_command("help", user.id, update.effective_chat.id if update.effective_chat else 0)
     help_text = """
     Доступные команды:
     /start - Запустить бота
@@ -98,8 +98,11 @@ async def help_command_wrapper(update: Update, context: ContextTypes.DEFAULT_TYP
     """
     await update.message.reply_text(help_text.strip())
 
+@log_function_call
 async def about_command_wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send info about the bot and its version."""
+    user = update.effective_user
+    logger.log_command("about", user.id, update.effective_chat.id if update.effective_chat else 0)
     version = get_current_version() # использовать новую функцию вместо get_version()
     bot_username = context.bot.username if context.bot else "unknown"
     about_text = f"""
@@ -114,8 +117,7 @@ async def about_command_wrapper(update: Update, context: ContextTypes.DEFAULT_TY
 """
     await update.message.reply_text(about_text.strip())
 
-
-
+@log_function_call
 async def chat_member_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle bot being added to or removed from a group."""
     result = update.my_chat_member
@@ -129,6 +131,7 @@ async def chat_member_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
     if new_status in ('member', 'administrator') and old_status in ('left', 'kicked'):
         chat = update.effective_chat
         if chat and chat.type in ('group', 'supergroup'):
+            logger.log_event("bot_added_to_group", chat_id=chat.id, chat_title=chat.title)
             welcome = (
                 "🐰 Привет! Я Кайо, ваш дружелюбный пушистый кролик-бот!\n\n"
                 "Вот что я умею:\n"
@@ -140,43 +143,57 @@ async def chat_member_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
             )
             try:
                 await context.bot.send_message(chat_id=chat.id, text=welcome)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error(f"Failed to send welcome message: {e}")
 
     # Bot was removed from group
     elif new_status in ('left', 'kicked'):
+        logger.log_event("bot_removed_from_group", chat_id=update.effective_chat.id if update.effective_chat else 0)
         # Could clean up DB here if needed
         pass
 
-
+@log_function_call
 async def combined_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle text messages to increment activity count and trigger reactions."""
-    logger.info(f"[combined_message_handler] Handler triggered! Update type: {type(update)}")
-    logger.info(f"[combined_message_handler] Full update: {update}")
-    logger.info(f"[combined_message_handler] update.message: {update.message}")
-    logger.info(f"[combined_message_handler] update.message.text: {update.message.text if update.message else 'NO MESSAGE'}")
-    logger.info(f"[combined_message_handler] effective_chat: {update.effective_chat}")
-    logger.info(f"[combined_message_handler] effective_user: {update.effective_user}")
+    # Log handler activation
+    logger.debug(f"Message handler triggered", 
+                 update_type=type(update).__name__,
+                 has_message=update.message is not None)
     
     # Check if message exists
     if not update.message or not update.message.text:
-        logger.info(f"[combined_message_handler] Message check failed: update.message={update.message}, text={update.message.text if update.message else 'NO MESSAGE'}")
+        logger.debug("Message check failed - no message or text")
         return
     
+    # Get chat and user info
+    chat = update.effective_chat
+    user = update.effective_user
+    if not chat or not user:
+        logger.warning("Chat or user is None", chat_id=chat.id if chat else None, user_id=user.id if user else None)
+        return
+    
+    # Log message details
+    logger.info(f"Message received",
+                chat_id=chat.id,
+                user_id=user.id,
+                username=user.username,
+                message_length=len(update.message.text))
+    
+    # Update activity in database
     db_manager = context.application.bot_data.get('db_manager')
     if db_manager:
-        chat = update.effective_chat
-        user = update.effective_user
-        if chat and user:
-            logger.info(f"[combined_message_handler] Chat ID: {chat.id}, User ID: {user.id}, Username: {user.username}")
+        try:
             activity_manager = db_manager.get_activity_manager(chat.id)
             activity_manager.increment_message(user.id, user.username or user.first_name or "")
             # Store message text for topic extraction
             activity_manager.store_message(user.id, update.message.text)
-        else:
-            logger.warning(f"[combined_message_handler] Chat or user is None: chat={chat}, user={user}")
+            logger.debug("Activity updated in database",
+                         chat_id=chat.id, user_id=user.id)
+        except Exception as e:
+            logger.error(f"Failed to update activity: {e}",
+                         chat_id=chat.id, user_id=user.id)
     else:
-        logger.warning(f"[combined_message_handler] db_manager is None")
+        logger.warning("db_manager is None", chat_id=chat.id)
 
     # Handle reactions
     text = update.message.text
@@ -185,19 +202,40 @@ async def combined_message_handler(update: Update, context: ContextTypes.DEFAULT
     if reaction:
         # Random chance to react (15%)
         if random.random() < 0.15:
+            logger.info("Sending reaction", 
+                        reaction_type="auto_reaction",
+                        user_id=user.id,
+                        chat_id=chat.id)
             await update.message.reply_html(reaction)
 
+@log_function_call
 def main() -> None:
     """Start the bot."""
+    logger.info("Starting Kayo Bot", version=get_current_version())
+    
     # Create the Application and pass it your bot's token.
-    application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
+    try:
+        application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
+        logger.info("Telegram application created successfully")
+    except Exception as e:
+        logger.error(f"Failed to create Telegram application: {e}")
+        sys.exit(1)
 
     # Create and store DB manager
-    db_manager = DBManager()
-    application.bot_data['db_manager'] = db_manager
+    try:
+        db_manager = DBManager()
+        application.bot_data['db_manager'] = db_manager
+        logger.info("Database manager initialized")
+    except Exception as e:
+        logger.error(f"Failed to initialize database manager: {e}")
+        sys.exit(1)
 
     # Setup auto-update
-    setup_auto_update(application)
+    try:
+        setup_auto_update(application)
+        logger.info("Auto-update system configured")
+    except Exception as e:
+        logger.warning(f"Failed to setup auto-update: {e}")
 
     # Register command handlers
     application.add_handler(CommandHandler("start", start))
@@ -217,16 +255,28 @@ def main() -> None:
     application.add_handler(CommandHandler("update", update_command))
 
     # Register profile handlers
-    from bot.handlers.profile import register_profile_handlers
-    register_profile_handlers(application)
+    try:
+        from bot.handlers.profile import register_profile_handlers
+        register_profile_handlers(application)
+        logger.info("Profile handlers registered")
+    except Exception as e:
+        logger.error(f"Failed to register profile handlers: {e}")
     
     # Register webapp handlers
-    from bot.handlers.webapp import register_webapp_handlers
-    register_webapp_handlers(application)
+    try:
+        from bot.handlers.webapp import register_webapp_handlers
+        register_webapp_handlers(application)
+        logger.info("WebApp handlers registered")
+    except Exception as e:
+        logger.error(f"Failed to register webapp handlers: {e}")
     
     # Register stats handlers
-    from bot.handlers.stats import register_stats_handlers
-    register_stats_handlers(application)
+    try:
+        from bot.handlers.stats import register_stats_handlers
+        register_stats_handlers(application)
+        logger.info("Stats handlers registered")
+    except Exception as e:
+        logger.error(f"Failed to register stats handlers: {e}")
 
     # Register message and chat member handlers
     # Обрабатываем все текстовые сообщения, включая команды
@@ -256,6 +306,7 @@ def main() -> None:
         BotCommand("update", "Проверить обновления"),
     ]
 
+    @log_function_call
     async def post_init(app):
         await app.bot.set_my_commands(commands)
         logger.info("Bot commands registered in Telegram menu")
@@ -263,32 +314,38 @@ def main() -> None:
     application.post_init = post_init
 
     # Add error handler
+    @log_function_call
     async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
         """Log errors."""
-        logger.error(f"Exception while handling an update: {context.error}")
-        logger.error(f"Update: {update}")
+        logger.error(f"Exception while handling an update: {context.error}",
+                     error_type=type(context.error).__name__,
+                     update=str(update),
+                     exc_info=True)
     
     application.add_error_handler(error_handler)
     
     # Add a handler to log ALL updates (for debugging)
+    @log_function_call
     async def log_all_updates(update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Log all incoming updates."""
-        logger.info(f"[LOG_ALL] Received update: {update}")
-        logger.info(f"[LOG_ALL] Update type: {type(update)}")
-        logger.info(f"[LOG_ALL] Has message: {update.message is not None}")
+        logger.debug(f"Received update",
+                     update_type=type(update).__name__,
+                     has_message=update.message is not None)
         if update.message:
-            logger.info(f"[LOG_ALL] Message text: {update.message.text}")
-            logger.info(f"[LOG_ALL] Message type: {update.message.chat.type}")
+            logger.debug(f"Message details",
+                         chat_id=update.message.chat.id if update.message.chat else None,
+                         message_type=update.message.chat.type if update.message.chat else None)
     
     # This will be called before any other handler
     application.add_handler(MessageHandler(filters.ALL, log_all_updates), group=-1)
 
     # Run the bot until the user presses Ctrl-C
     try:
+        logger.info("Starting bot polling...")
         application.run_polling(drop_pending_updates=True)
     except Exception as e:
-        logger.error(f"Failed to start the bot: {e}")
-        logger.error("Please check your TELEGRAM_BOT_TOKEN and network connection.")
+        logger.critical(f"Failed to start the bot: {e}", exc_info=True)
+        logger.critical("Please check your TELEGRAM_BOT_TOKEN and network connection.")
         sys.exit(1)
 
 if __name__ == '__main__':

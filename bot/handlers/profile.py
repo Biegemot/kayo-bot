@@ -112,12 +112,23 @@ async def handle_profile_callback(update: Update, context: ContextTypes.DEFAULT_
     
     data = query.data
     
-
+    # Handle edit_* patterns
+    if data.startswith("edit_"):
+        field = data.split("_", 1)[1]
+        
+        if field == "done":
+            # Close edit menu
+            await query.delete_message()
+        else:
+            # Request field value
+            await request_field_value(query.from_user.id, field, context, update)
     
+    # Handle profile_close
     elif data == "profile_close":
         # Close the message
         await query.delete_message()
     
+    # Handle personality_* patterns
     elif data.startswith("personality_"):
         # Personality type selection
         personality_type = data.split("_", 1)[1]
@@ -314,5 +325,6 @@ def register_profile_handlers(application):
     application.add_handler(CommandHandler("me", profile_command))
     application.add_handler(CallbackQueryHandler(handle_profile_callback, pattern="^profile_"))
     application.add_handler(CallbackQueryHandler(handle_profile_callback, pattern="^edit_"))
+    application.add_handler(CallbackQueryHandler(handle_profile_callback, pattern="^personality_"))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_profile_message))
     application.add_handler(MessageHandler(filters.PHOTO | filters.Document.IMAGE, handle_profile_message))

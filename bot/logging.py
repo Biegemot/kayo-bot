@@ -8,6 +8,7 @@
 - Автоматическое логирование вызовов функций через декоратор
 - Поддержка разных уровней логирования (DEBUG, INFO, WARNING, ERROR, CRITICAL)
 - Сохранение трейсбэков при ошибках
+- Отдельные лог-файлы за разные даты в структурированных папках
 """
 
 import json
@@ -76,6 +77,11 @@ class StructuredLogger:
         # Настраиваем обработчики
         self._setup_handlers()
         
+    def _get_dated_filename(self, prefix: str, extension: str = "log") -> str:
+        """Генерирует имя файла с датой."""
+        today = datetime.now().strftime("%Y-%m-%d")
+        return os.path.join(LOG_DIR, f"{prefix}_{today}.{extension}")
+    
     def _setup_handlers(self):
         """Настраивает обработчики логов."""
         
@@ -90,35 +96,62 @@ class StructuredLogger:
         console_handler.setLevel(logging.INFO)
         console_handler.setFormatter(text_formatter)
         
-        # Обработчик для файла с ротацией по датам
-        date_handler = logging.handlers.TimedRotatingFileHandler(
-            filename=os.path.join(LOG_DIR, "kayo-bot.log"),
+        # Обработчик для основного лог-файла с ротацией по датам
+        main_log_file = self._get_dated_filename("kayo-bot")
+        main_handler = logging.handlers.TimedRotatingFileHandler(
+            filename=main_log_file,
             when="midnight",
             interval=1,
             backupCount=30
         )
-        date_handler.setLevel(logging.DEBUG)
-        date_handler.setFormatter(text_formatter)
+        main_handler.setLevel(logging.DEBUG)
+        main_handler.setFormatter(text_formatter)
         
-        # Обработчик для JSON логов
-        json_handler = logging.FileHandler(
-            filename=os.path.join(LOG_DIR, "kayo-bot.json")
-        )
+        # Обработчик для JSON логов (один файл на день)
+        json_log_file = self._get_dated_filename("kayo-bot", "json")
+        json_handler = logging.FileHandler(filename=json_log_file)
         json_handler.setLevel(logging.DEBUG)
         json_handler.setFormatter(json_formatter)
         
-        # Обработчик для ошибок
-        error_handler = logging.FileHandler(
-            filename=os.path.join(LOG_DIR, "errors.log")
-        )
+        # Обработчик для ошибок (отдельный файл)
+        error_log_file = self._get_dated_filename("errors")
+        error_handler = logging.FileHandler(filename=error_log_file)
         error_handler.setLevel(logging.ERROR)
         error_handler.setFormatter(text_formatter)
         
-        # Добавляем обработчики
+        # Обработчик для команд бота (отдельный файл)
+        commands_log_file = self._get_dated_filename("commands")
+        commands_handler = logging.FileHandler(filename=commands_log_file)
+        commands_handler.setLevel(logging.INFO)
+        commands_formatter = logging.Formatter('%(asctime)s - COMMAND - %(message)s')
+        commands_handler.setFormatter(commands_formatter)
+        
+        # Обработчик для базы данных (отдельный файл)
+        db_log_file = self._get_dated_filename("database")
+        db_handler = logging.FileHandler(filename=db_log_file)
+        db_handler.setLevel(logging.DEBUG)
+        db_formatter = logging.Formatter('%(asctime)s - DB - %(message)s')
+        db_handler.setFormatter(db_formatter)
+        
+        # Создаем отдельный логгер для базы данных
+        db_logger = logging.getLogger("kayo-bot.db")
+        db_logger.addHandler(db_handler)
+        db_logger.setLevel(logging.DEBUG)
+        
+        # Создаем отдельный логгер для команд
+        cmd_logger = logging.getLogger("kayo-bot.commands")
+        cmd_logger.addHandler(commands_handler)
+        cmd_logger.setLevel(logging.INFO)
+        
+        # Добавляем обработчики к основному логгеру
         self.logger.addHandler(console_handler)
-        self.logger.addHandler(date_handler)
+        self.logger.addHandler(main_handler)
         self.logger.addHandler(json_handler)
         self.logger.addHandler(error_handler)
+        
+        # Сохраняем ссылки на специализированные логгеры
+        self.db_logger = db_logger
+        self.cmd_logger = cmd_logger
     
     def set_context(self, **kwargs):
         """Устанавливает контекст для последующих логов."""
@@ -171,13 +204,15 @@ class StructuredLogger:
         
     def log_command(self, command: str, user_id: int, chat_id: int, **kwargs):
         """Логирование команды бота."""
-        self.info(
-            f"Command: {command}",
-            user_id=user_id,
-            chat_id=chat_id,
-            command=command,
-            **kwargs
-        )
+        log_msg = f"Command: {command} | user_id={user_id} | chat_id={chat_id}"
+        for k, v in kwargs.items():
+            log_msg += f" | {k}={v}"
+        
+        # Логируем в основной логгер
+        self.info(log_msg)
+        
+        # Логируем в специализированный логгер команд
+        self.cmd_logger.info(log_msg)
         
     def log_event(self, event_type: str, **kwargs):
         """Логирование события."""
@@ -189,12 +224,15 @@ class StructuredLogger:
         
     def log_database(self, operation: str, table: str, **kwargs):
         """Логирование операции с базой данных."""
-        self.debug(
-            f"DB {operation} on {table}",
-            db_operation=operation,
-            db_table=table,
-            **kwargs
-        )
+        log_msg = f"DB {operation} on {table}"
+        for k, v in kwargs.items():
+            log_msg += f" | {k}={v}"
+        
+        # Логируем в основной логгер
+        self.debug(log_msg)
+        
+        # Логируем в специализированный логгер базы данных
+        self.db_logger.debug(log_msg)
 
 
 # Глобальный экземпляр логгера
@@ -272,6 +310,12 @@ if __name__ == "__main__":
     with logger.with_context(user_id=123, session_id="abc"):
         logger.info("Сообщение с контекстом")
         
+    # Тестирование логирования команд
+    logger.log_command("test", 123, 456, param1="value1", param2="value2")
+    
+    # Тестирование логирования базы данных
+    logger.log_database("SELECT", "users", user_id=123)
+    
     # Тестирование декоратора
     @log_function_call
     def test_function(x, y):

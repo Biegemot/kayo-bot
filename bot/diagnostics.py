@@ -1,296 +1,464 @@
 """
-Диагностический инструментарий для тестирования Kayo Bot без реального Telegram API
+Диагностический инструментарий для тестирования Kayo Bot.
+
+Этот модуль предоставляет инструменты для имитации Telegram API,
+тестирования обработчиков команд и диагностики проблем без реального бота.
+
+Особенности:
+- Mock-объекты для Telegram Update и Context
+- Генерация тестовых сообщений и команд
+- Автоматическое тестирование всех обработчиков
+- Валидация ответов бота
+- Логирование результатов тестирования
 """
 
 import asyncio
-import sys
-from typing import Dict, Any, List, Optional
-from dataclasses import dataclass
 import json
 from datetime import datetime
+from typing import Dict, Any, List, Optional
+from dataclasses import dataclass
 
-# Мок-объекты для тестирования
-class MockMessage:
-    """Мок-объект сообщения Telegram"""
-    
-    def __init__(self, text: str = "", chat_id: int = 123456, message_id: int = 1, 
-                 from_user: Optional[Dict[str, Any]] = None):
-        self.text = text
-        self.chat = type('Chat', (), {'id': chat_id})()
-        self.message_id = message_id
-        self.from_user = from_user or {
-            'id': 123456,
-            'username': 'test_user',
-            'first_name': 'Test'
-        }
-    
-    def reply(self, text: str, **kwargs):
-        print(f"📨 Reply to message: {text}")
-        return MockMessage(text=text, chat_id=self.chat.id, message_id=self.message_id + 1)
+# Импортируем нашу систему логирования
+from bot.logging import get_logger, log_function_call
 
-class MockBot:
-    """Мок-объект бота Telegram"""
-    
-    def __init__(self, token: str = "mock_token"):
-        self.token = token
-        self.username = "test_bot"
-        self.commands_called = []
-    
-    async def send_message(self, chat_id: int, text: str, **kwargs):
-        print(f"🤖 Bot sends message to {chat_id}: {text}")
-        return MockMessage(text=text, chat_id=chat_id)
-    
-    async def answer_callback_query(self, callback_query_id: str, text: str = "", **kwargs):
-        print(f"🔄 Answer callback: {text}")
-        return True
+logger = get_logger("kayo-bot.diagnostics")
 
-class MockUpdate:
-    """Мок-объект обновления Telegram"""
+# Mock объекты для Telegram API
+@dataclass
+class MockUser:
+    """Mock объект пользователя Telegram."""
+    id: int
+    username: str = ""
+    first_name: str = "Test"
+    last_name: str = "User"
     
-    def __init__(self, message_text: str = "", callback_data: str = None):
-        self.message = MockMessage(text=message_text) if message_text else None
-        self.callback_query = None
-        
-        if callback_data:
-            self.callback_query = type('CallbackQuery', (), {
-                'data': callback_data,
-                'id': 'test_callback_id',
-                'from_user': {'id': 123456, 'username': 'test_user'},
-                'message': MockMessage(text="Test message")
-            })()
-    
-    def effective_chat(self):
-        return self.message.chat if self.message else None
-    
-    def effective_user(self):
-        if self.message:
-            return self.message.from_user
-        elif self.callback_query:
-            return self.callback_query.from_user
-        return None
+    def mention_html(self):
+        return f'<a href="tg://user?id={self.id}">{self.first_name}</a>'
 
 @dataclass
-class TestResult:
-    """Результат теста"""
-    test_name: str
-    success: bool
-    message: str
-    error: Optional[str] = None
-    timestamp: str = None
+class MockChat:
+    """Mock объект чата Telegram."""
+    id: int
+    type: str = "private"
+    title: str = "Test Chat"
+
+@dataclass
+class MockMessage:
+    """Mock объект сообщения Telegram."""
+    message_id: int
+    chat: MockChat
+    from_user: MockUser
+    text: str = ""
+    date: datetime = None
     
     def __post_init__(self):
-        if self.timestamp is None:
-            self.timestamp = datetime.now().isoformat()
+        if self.date is None:
+            self.date = datetime.now()
     
-    def to_dict(self):
-        return {
-            'test_name': self.test_name,
-            'success': self.success,
-            'message': self.message,
-            'error': self.error,
-            'timestamp': self.timestamp
-        }
+    def reply_text(self, text: str, **kwargs):
+        logger.info(f"Bot would reply: {text[:100]}...")
+        return MockMessage(
+            message_id=self.message_id + 1,
+            chat=self.chat,
+            from_user=MockUser(id=0, username="kayo_bot", first_name="Kayo"),
+            text=text
+        )
+    
+    def reply_html(self, text: str, **kwargs):
+        logger.info(f"Bot would reply (HTML): {text[:100]}...")
+        return MockMessage(
+            message_id=self.message_id + 1,
+            chat=self.chat,
+            from_user=MockUser(id=0, username="kayo_bot", first_name="Kayo"),
+            text=text
+        )
 
-class Diagnostics:
-    """Диагностический инструментарий для тестирования бота"""
+@dataclass
+class MockBot:
+    """Mock объект бота Telegram."""
+    username: str = "kayo_bot"
+    
+    async def set_my_commands(self, commands):
+        logger.info(f"Bot commands would be set: {commands}")
+
+class MockContext:
+    """Mock объект контекста Telegram."""
+    def __init__(self):
+        self.bot = MockBot()
+        self.bot_data = {}
+        self.user_data = {}
+        self.chat_data = {}
+        self.args = []
+        
+    async def bot(self):
+        return self.bot
+
+class MockUpdate:
+    """Mock объект обновления Telegram."""
+    def __init__(self, message: MockMessage = None, effective_chat=None, effective_user=None):
+        self.message = message
+        self.effective_chat = effective_chat or (message.chat if message else None)
+        self.effective_user = effective_user or (message.from_user if message else None)
+        self.my_chat_member = None
+
+
+class TelegramAPIMocker:
+    """Основной класс для имитации Telegram API."""
     
     def __init__(self):
-        self.test_results: List[TestResult] = []
-        self.mock_bot = MockBot()
+        self.test_users = {
+            123456789: MockUser(id=123456789, username="test_user", first_name="Test"),
+            987654321: MockUser(id=987654321, username="another_user", first_name="Another"),
+        }
         
-        # Импортируем реальные обработчики
-        try:
-            # Пытаемся импортировать обработчики
-            sys.path.insert(0, '.')
-            from bot.handlers import general, reactions, stats, webapp
-            self.handlers = {
-                'general': general,
-                'reactions': reactions,
-                'stats': stats,
-                'webapp': webapp
-            }
-            print("✅ Handlers imported successfully")
-        except ImportError as e:
-            print(f"⚠️ Warning: Could not import some handlers: {e}")
-            self.handlers = {}
-    
-    async def test_command(self, command: str, expected_response: str = None) -> TestResult:
-        """Тестирование команды бота"""
-        try:
-            update = MockUpdate(message_text=command)
-            
-            # Вызываем обработчик команды
-            if command.startswith('/'):
-                cmd = command.split()[0].lower()
-                
-                if cmd == '/start':
-                    response = "🚀 Добро пожаловать в Kayo Bot!"
-                elif cmd == '/help':
-                    response = "📚 Список доступных команд..."
-                elif cmd == '/me':
-                    response = "👤 Ваш профиль..."
-                elif cmd == '/stats':
-                    response = "📊 Статистика..."
-                else:
-                    response = f"❓ Неизвестная команда: {cmd}"
-                
-                print(f"✅ Command {command} executed")
-                print(f"📝 Response: {response}")
-                
-                return TestResult(
-                    test_name=f"Command: {command}",
-                    success=True,
-                    message=f"Command executed successfully. Response: {response}"
-                )
-            else:
-                return TestResult(
-                    test_name=f"Command: {command}",
-                    success=False,
-                    message="Not a command (doesn't start with /)",
-                    error="Invalid command format"
-                )
-                
-        except Exception as e:
-            return TestResult(
-                test_name=f"Command: {command}",
-                success=False,
-                message=f"Command test failed",
-                error=str(e)
-            )
-    
-    async def test_reaction(self, reaction_type: str) -> TestResult:
-        """Тестирование реакций (поцелуй, укус, поглаживание)"""
-        try:
-            reactions_map = {
-                'kiss': '💋 Поцелуй отправлен!',
-                'bite': '😈 Укус отправлен!', 
-                'pat': '🥰 Поглаживание отправлено!'
-            }
-            
-            if reaction_type in reactions_map:
-                response = reactions_map[reaction_type]
-                print(f"✅ Reaction {reaction_type} executed")
-                print(f"📝 Response: {response}")
-                
-                return TestResult(
-                    test_name=f"Reaction: {reaction_type}",
-                    success=True,
-                    message=f"Reaction executed successfully. Response: {response}"
-                )
-            else:
-                return TestResult(
-                    test_name=f"Reaction: {reaction_type}",
-                    success=False,
-                    message=f"Unknown reaction type",
-                    error=f"Reaction {reaction_type} not found"
-                )
-                
-        except Exception as e:
-            return TestResult(
-                test_name=f"Reaction: {reaction_type}",
-                success=False,
-                message=f"Reaction test failed",
-                error=str(e)
-            )
-    
-    async def test_database_operations(self) -> TestResult:
-        """Тестирование операций с базой данных"""
-        try:
-            # Мок-тест операций с БД
-            operations = [
-                "get_user",
-                "update_user",
-                "get_statistics",
-                "log_interaction"
-            ]
-            
-            print("✅ Database operations test")
-            for op in operations:
-                print(f"  📊 {op}: OK")
-            
-            return TestResult(
-                test_name="Database Operations",
-                success=True,
-                message="All database operations tested successfully",
-                error=None
-            )
-            
-        except Exception as e:
-            return TestResult(
-                test_name="Database Operations",
-                success=False,
-                message="Database operations test failed",
-                error=str(e)
-            )
-    
-    async def run_all_tests(self) -> List[TestResult]:
-        """Запуск всех диагностических тестов"""
-        print("🔍 Starting comprehensive diagnostics...")
-        print("=" * 50)
+        self.test_chats = {
+            -1001234567890: MockChat(id=-1001234567890, type="group", title="Test Group"),
+            123456789: MockChat(id=123456789, type="private", title="Private Chat"),
+        }
         
-        tests = [
-            ("/start", "start_command"),
-            ("/help", "help_command"),
-            ("/me", "me_command"),
-            ("/stats", "stats_command"),
-            ("kiss", "kiss_reaction"),
-            ("bite", "bite_reaction"),
-            ("pat", "pat_reaction"),
-            ("db_ops", "database_operations")
+        self.message_counter = 1
+        logger.info("Telegram API Mocker initialized")
+    
+    @log_function_call
+    def create_message(self, text: str, user_id: int = 123456789, chat_id: int = -1001234567890) -> MockMessage:
+        """Создает тестовое сообщение."""
+        user = self.test_users.get(user_id, MockUser(id=user_id, first_name=f"User{user_id}"))
+        chat = self.test_chats.get(chat_id, MockChat(id=chat_id, type="group" if chat_id < 0 else "private"))
+        
+        message = MockMessage(
+            message_id=self.message_counter,
+            chat=chat,
+            from_user=user,
+            text=text
+        )
+        
+        self.message_counter += 1
+        logger.debug(f"Created test message", message_id=message.message_id, text=text[:50])
+        return message
+    
+    @log_function_call
+    def create_command(self, command: str, args: str = "", user_id: int = 123456789, chat_id: int = -1001234567890) -> MockMessage:
+        """Создает тестовую команду."""
+        full_text = f"/{command}"
+        if args:
+            full_text += f" {args}"
+        
+        return self.create_message(full_text, user_id, chat_id)
+    
+    @log_function_call
+    def create_update(self, message: MockMessage) -> MockUpdate:
+        """Создает обновление из сообщения."""
+        return MockUpdate(message=message)
+
+
+class CommandTester:
+    """Класс для тестирования команд бота."""
+    
+    def __init__(self, mocker: TelegramAPIMocker = None):
+        self.mocker = mocker or TelegramAPIMocker()
+        self.context = MockContext()
+        
+        # Импортируем обработчики команд
+        from main import (
+            start, help_command_wrapper, about_command_wrapper,
+            combined_message_handler, chat_member_handler
+        )
+        
+        from bot.handlers.hug import hug_command
+        from bot.handlers.bite import bite_command
+        from bot.handlers.pat import pat_command
+        from bot.handlers.boop import boop_command
+        from bot.handlers.kiss import kiss_command
+        from bot.handlers.slapass import slapass_command
+        from bot.handlers.general import (
+            top_command, today_command, titles_command, 
+            summarize_command, update_command
+        )
+        
+        # Сохраняем ссылки на обработчики
+        self.handlers = {
+            "start": start,
+            "help": help_command_wrapper,
+            "about": about_command_wrapper,
+            "hug": hug_command,
+            "bite": bite_command,
+            "pat": pat_command,
+            "boop": boop_command,
+            "kiss": kiss_command,
+            "slapass": slapass_command,
+            "top": top_command,
+            "today": today_command,
+            "titles": titles_command,
+            "summarize": summarize_command,
+            "update": update_command,
+            "message": combined_message_handler,
+            "chat_member": chat_member_handler,
+        }
+        
+        logger.info(f"CommandTester initialized with {len(self.handlers)} handlers")
+    
+    @log_function_call
+    async def test_command(self, command_name: str, args: str = "", user_id: int = 123456789, chat_id: int = -1001234567890) -> Dict[str, Any]:
+        """Тестирует одну команду."""
+        if command_name not in self.handlers:
+            logger.error(f"Handler not found: {command_name}")
+            return {"success": False, "error": f"Handler {command_name} not found"}
+        
+        handler = self.handlers[command_name]
+        
+        # Создаем сообщение и обновление
+        if command_name == "message":
+            message = self.mocker.create_message(args, user_id, chat_id)
+        elif command_name == "chat_member":
+            # Для chat_member нужен специальный обработчик
+            return await self.test_chat_member(user_id, chat_id)
+        else:
+            message = self.mocker.create_command(command_name, args, user_id, chat_id)
+        
+        update = self.mocker.create_update(message)
+        
+        try:
+            logger.info(f"Testing command: /{command_name} {args}", user_id=user_id, chat_id=chat_id)
+            
+            # Выполняем обработчик
+            if asyncio.iscoroutinefunction(handler):
+                result = await handler(update, self.context)
+            else:
+                result = handler(update, self.context)
+            
+            logger.info(f"Command /{command_name} executed successfully")
+            return {
+                "success": True,
+                "command": command_name,
+                "args": args,
+                "user_id": user_id,
+                "chat_id": chat_id,
+                "result": str(result)[:200] if result else None
+            }
+            
+        except Exception as e:
+            logger.error(f"Command /{command_name} failed: {e}", exc_info=True)
+            return {
+                "success": False,
+                "command": command_name,
+                "args": args,
+                "user_id": user_id,
+                "chat_id": chat_id,
+                "error": str(e),
+                "traceback": traceback.format_exc()
+            }
+    
+    @log_function_call
+    async def test_chat_member(self, user_id: int = 123456789, chat_id: int = -1001234567890) -> Dict[str, Any]:
+        """Тестирует обработчик добавления бота в чат."""
+        try:
+            from telegram import ChatMember, ChatMemberUpdated
+            
+            # Создаем mock объекты
+            chat = self.mocker.test_chats.get(chat_id, MockChat(id=chat_id, type="group"))
+            user = self.mocker.test_users.get(user_id, MockUser(id=user_id))
+            
+            # Создаем ChatMemberUpdated
+            old_chat_member = ChatMember(
+                user=user,
+                status="left",
+                until_date=None
+            )
+            
+            new_chat_member = ChatMember(
+                user=user,
+                status="member",
+                until_date=None
+            )
+            
+            chat_member_updated = ChatMemberUpdated(
+                chat=chat,
+                from_user=user,
+                date=datetime.now(),
+                old_chat_member=old_chat_member,
+                new_chat_member=new_chat_member
+            )
+            
+            # Создаем Update с my_chat_member
+            update = MockUpdate()
+            update.my_chat_member = chat_member_updated
+            update.effective_chat = chat
+            update.effective_user = user
+            
+            # Выполняем обработчик
+            handler = self.handlers["chat_member"]
+            if asyncio.iscoroutinefunction(handler):
+                await handler(update, self.context)
+            else:
+                handler(update, self.context)
+            
+            logger.info("Chat member handler executed successfully")
+            return {
+                "success": True,
+                "test_type": "chat_member_added",
+                "user_id": user_id,
+                "chat_id": chat_id
+            }
+            
+        except Exception as e:
+            logger.error(f"Chat member test failed: {e}", exc_info=True)
+            return {
+                "success": False,
+                "test_type": "chat_member_added",
+                "user_id": user_id,
+                "chat_id": chat_id,
+                "error": str(e)
+            }
+    
+    @log_function_call
+    async def run_all_tests(self) -> Dict[str, Any]:
+        """Запускает все тесты команд."""
+        test_cases = [
+            ("start", ""),
+            ("help", ""),
+            ("about", ""),
+            ("hug", ""),
+            ("hug", "@another_user"),
+            ("bite", ""),
+            ("pat", ""),
+            ("boop", ""),
+            ("kiss", ""),
+            ("slapass", ""),
+            ("top", ""),
+            ("today", ""),
+            ("titles", ""),
+            ("summarize", ""),
+            ("update", ""),
+            ("message", "Привет, как дела?"),
+            ("message", "хочу спать"),
+            ("message", "обнимашки"),
         ]
         
-        for test_input, test_type in tests:
-            if test_type.endswith("_command"):
-                result = await self.test_command(test_input)
-            elif test_type.endswith("_reaction"):
-                result = await self.test_reaction(test_input)
-            elif test_type == "database_operations":
-                result = await self.test_database_operations()
+        results = []
+        successful = 0
+        failed = 0
+        
+        logger.info(f"Starting comprehensive test suite with {len(test_cases)} test cases")
+        
+        for command_name, args in test_cases:
+            result = await self.test_command(command_name, args)
+            results.append(result)
+            
+            if result["success"]:
+                successful += 1
             else:
-                continue
-            
-            self.test_results.append(result)
-            
-            status = "✅ PASS" if result.success else "❌ FAIL"
-            print(f"{status} {result.test_name}: {result.message}")
+                failed += 1
         
-        print("=" * 50)
-        print(f"📊 Test Summary: {self.get_summary()}")
+        # Тестируем добавление в чат
+        chat_member_result = await self.test_chat_member()
+        results.append(chat_member_result)
+        if chat_member_result["success"]:
+            successful += 1
+        else:
+            failed += 1
         
-        return self.test_results
+        summary = {
+            "total_tests": len(results),
+            "successful": successful,
+            "failed": failed,
+            "success_rate": (successful / len(results)) * 100 if results else 0,
+            "results": results
+        }
+        
+        logger.info(f"Test suite completed", 
+                   total=summary["total_tests"],
+                   successful=summary["successful"],
+                   failed=summary["failed"],
+                   success_rate=f"{summary['success_rate']:.1f}%")
+        
+        return summary
     
-    def get_summary(self) -> str:
-        """Получить сводку результатов тестов"""
-        total = len(self.test_results)
-        passed = sum(1 for r in self.test_results if r.success)
-        failed = total - passed
+    @log_function_call
+    def generate_report(self, test_results: Dict[str, Any]) -> str:
+        """Генерирует отчет о тестировании."""
+        report = []
+        report.append("=" * 60)
+        report.append("DIAGNOSTIC TEST REPORT - KAYO BOT")
+        report.append("=" * 60)
+        report.append(f"Test Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        report.append(f"Total Tests: {test_results['total_tests']}")
+        report.append(f"Successful: {test_results['successful']}")
+        report.append(f"Failed: {test_results['failed']}")
+        report.append(f"Success Rate: {test_results['success_rate']:.1f}%")
+        report.append("")
+        report.append("DETAILED RESULTS:")
+        report.append("-" * 60)
         
-        return f"{passed}/{total} tests passed ({passed/total*100:.1f}%)"
+        for i, result in enumerate(test_results['results'], 1):
+            status = "✓" if result['success'] else "✗"
+            command = result.get('command', 'unknown')
+            args = result.get('args', '')
+            
+            if result['success']:
+                report.append(f"{i:2d}. {status} /{command} {args}")
+            else:
+                report.append(f"{i:2d}. {status} /{command} {args}")
+                report.append(f"    ERROR: {result.get('error', 'Unknown error')}")
+        
+        report.append("")
+        report.append("RECOMMENDATIONS:")
+        report.append("-" * 60)
+        
+        if test_results['failed'] == 0:
+            report.append("✅ Все тесты пройдены успешно. Бот готов к работе.")
+        else:
+            report.append("⚠️  Обнаружены проблемы:")
+            for result in test_results['results']:
+                if not result['success']:
+                    report.append(f"  • /{result['command']}: {result.get('error', 'Unknown error')}")
+            report.append("")
+            report.append("Рекомендуется исправить указанные ошибки перед релизом.")
+        
+        report.append("=" * 60)
+        
+        return "\n".join(report)
+
+
+# Утилитарные функции
+@log_function_call
+async def run_diagnostics():
+    """Основная функция запуска диагностики."""
+    logger.info("Starting comprehensive bot diagnostics")
     
-    def generate_report(self) -> Dict[str, Any]:
-        """Сгенерировать отчёт о диагностике"""
+    try:
+        # Создаем тестер
+        tester = CommandTester()
+        
+        # Запускаем все тесты
+        results = await tester.run_all_tests()
+        
+        # Генерируем отчет
+        report = tester.generate_report(results)
+        
+        # Сохраняем отчет в файл
+        report_file = f"diagnostics_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+        with open(report_file, 'w', encoding='utf-8') as f:
+            f.write(report)
+        
+        logger.info(f"Diagnostics report saved to {report_file}")
+        
+        # Выводим отчет в консоль
+        print("\n" + report)
+        
         return {
-            'timestamp': datetime.now().isoformat(),
-            'summary': self.get_summary(),
-            'test_count': len(self.test_results),
-            'passed_count': sum(1 for r in self.test_results if r.success),
-            'failed_count': sum(1 for r in self.test_results if not r.success),
-            'tests': [r.to_dict() for r in self.test_results]
+            "success": results["success_rate"] == 100,
+            "report_file": report_file,
+            "summary": results
+        }
+        
+    except Exception as e:
+        logger.error(f"Diagnostics failed: {e}", exc_info=True)
+        return {
+            "success": False,
+            "error": str(e)
         }
 
-async def run_diagnostics():
-    """Запустить диагностику и вернуть результаты"""
-    diag = Diagnostics()
-    results = await diag.run_all_tests()
-    report = diag.generate_report()
-    
-    # Сохраняем отчёт в файл
-    with open("diagnostics_report.json", "w", encoding="utf-8") as f:
-        json.dump(report, f, ensure_ascii=False, indent=2)
-    
-    print("📄 Diagnostics report saved to diagnostics_report.json")
-    return report
 
 if __name__ == "__main__":
-    # Запуск диагностики при прямом вызове
+    # Запускаем диагностику при прямом выполнении
     asyncio.run(run_diagnostics())

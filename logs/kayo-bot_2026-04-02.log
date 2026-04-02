@@ -1,0 +1,373 @@
+2026-04-02 11:17:00,107 - kayo-bot - INFO - Тестовое сообщение INFO | test=True
+2026-04-02 11:17:00,108 - kayo-bot - DEBUG - Тестовое сообщение DEBUG | test=True
+2026-04-02 11:17:00,109 - kayo-bot - WARNING - Тестовое сообщение WARNING | test=True
+2026-04-02 11:17:00,109 - kayo-bot - ERROR - Тестовое сообщение ERROR | test=True
+NoneType: None
+2026-04-02 11:17:00,111 - kayo-bot - INFO - Command: test | user_id=123 | chat_id=456 | param=value
+2026-04-02 11:17:00,112 - kayo-bot.commands - INFO - Command: test | user_id=123 | chat_id=456 | param=value
+2026-04-02 11:17:00,113 - kayo-bot - DEBUG - DB SELECT on users | user_id=123
+2026-04-02 11:17:00,113 - kayo-bot.db - DEBUG - DB SELECT on users | user_id=123
+2026-04-02 11:17:00,196 - kayo-bot.activity - INFO - Initializing ActivityManager | db_path=/home/skyfox/.temm1e/workspace/kayo-bot/bot/data/test_chat_999.db
+2026-04-02 11:17:00,196 - kayo-bot.activity - INFO - Initializing ActivityManager | db_path=/home/skyfox/.temm1e/workspace/kayo-bot/bot/data/test_chat_999.db
+2026-04-02 11:17:00,197 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:17:00,202 - kayo-bot.activity - DEBUG - Database connection established | db_path=/home/skyfox/.temm1e/workspace/kayo-bot/bot/data/test_chat_999.db
+2026-04-02 11:17:00,202 - kayo-bot.activity - DEBUG - Database connection established | db_path=/home/skyfox/.temm1e/workspace/kayo-bot/bot/data/test_chat_999.db
+2026-04-02 11:17:00,202 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:17:00,203 - kayo-bot - DEBUG - Calling create_table | function=create_table module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:17:00,203 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:17:00,203 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:17:00,204 - kayo-bot.activity - DEBUG - DB CREATE TABLE on users
+2026-04-02 11:17:00,204 - kayo-bot.activity - DEBUG - DB CREATE TABLE on users
+2026-04-02 11:17:00,204 - kayo-bot.db - DEBUG - DB CREATE TABLE on users
+2026-04-02 11:17:00,213 - kayo-bot.activity - DEBUG - DB CREATE TABLE on messages
+2026-04-02 11:17:00,213 - kayo-bot.activity - DEBUG - DB CREATE TABLE on messages
+2026-04-02 11:17:00,214 - kayo-bot.db - DEBUG - DB CREATE TABLE on messages
+2026-04-02 11:17:00,222 - kayo-bot.activity - DEBUG - DB CREATE TABLE on user_profiles
+2026-04-02 11:17:00,222 - kayo-bot.activity - DEBUG - DB CREATE TABLE on user_profiles
+2026-04-02 11:17:00,223 - kayo-bot.db - DEBUG - DB CREATE TABLE on user_profiles
+2026-04-02 11:17:00,230 - kayo-bot.activity - DEBUG - DB CREATE TABLE on chat_stats
+2026-04-02 11:17:00,230 - kayo-bot.activity - DEBUG - DB CREATE TABLE on chat_stats
+2026-04-02 11:17:00,231 - kayo-bot.db - DEBUG - DB CREATE TABLE on chat_stats
+2026-04-02 11:17:00,241 - kayo-bot.activity - INFO - Database tables created/verified
+2026-04-02 11:17:00,241 - kayo-bot.activity - INFO - Database tables created/verified
+2026-04-02 11:17:00,244 - kayo-bot - DEBUG - Function create_table completed successfully | function=create_table
+2026-04-02 11:17:00,245 - kayo-bot - DEBUG - Calling migrate_schema | function=migrate_schema module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:17:00,245 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:17:00,246 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:17:00,250 - kayo-bot.activity - DEBUG - Schema migration completed
+2026-04-02 11:17:00,250 - kayo-bot.activity - DEBUG - Schema migration completed
+2026-04-02 11:17:00,252 - kayo-bot - DEBUG - Function migrate_schema completed successfully | function=migrate_schema
+2026-04-02 11:17:00,253 - kayo-bot - DEBUG - Calling increment_message | function=increment_message module=bot.services.activity args_count=3 kwargs_count=0
+2026-04-02 11:17:00,253 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:17:00,253 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:17:00,267 - kayo-bot.activity - DEBUG - DB INCREMENT_MESSAGE on users | user_id=999 | username=test_user | today_count=incremented
+2026-04-02 11:17:00,267 - kayo-bot.activity - DEBUG - DB INCREMENT_MESSAGE on users | user_id=999 | username=test_user | today_count=incremented
+2026-04-02 11:17:00,268 - kayo-bot.db - DEBUG - DB INCREMENT_MESSAGE on users | user_id=999 | username=test_user | today_count=incremented
+2026-04-02 11:17:00,269 - kayo-bot - DEBUG - Function increment_message completed successfully | function=increment_message
+2026-04-02 11:17:00,270 - kayo-bot - DEBUG - Calling store_message | function=store_message module=bot.services.activity args_count=3 kwargs_count=0
+2026-04-02 11:17:00,271 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:17:00,271 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:17:00,284 - kayo-bot.activity - DEBUG - Message stored for topic analysis | user_id=999 message_length=34
+2026-04-02 11:17:00,284 - kayo-bot.activity - DEBUG - Message stored for topic analysis | user_id=999 message_length=34
+2026-04-02 11:17:00,286 - kayo-bot - DEBUG - Function store_message completed successfully | function=store_message
+2026-04-02 11:17:00,286 - kayo-bot - DEBUG - Calling get_user_stats | function=get_user_stats module=bot.services.activity args_count=2 kwargs_count=0
+2026-04-02 11:17:00,287 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:17:00,287 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:17:00,290 - kayo-bot.activity - DEBUG - DB GET_USER_STATS on users | user_id=999 | found=True
+2026-04-02 11:17:00,290 - kayo-bot.activity - DEBUG - DB GET_USER_STATS on users | user_id=999 | found=True
+2026-04-02 11:17:00,291 - kayo-bot.db - DEBUG - DB GET_USER_STATS on users | user_id=999 | found=True
+2026-04-02 11:17:00,292 - kayo-bot - DEBUG - Function get_user_stats completed successfully | function=get_user_stats
+2026-04-02 11:17:00,292 - kayo-bot - DEBUG - Calling get_top_users | function=get_top_users module=bot.services.activity args_count=2 kwargs_count=0
+2026-04-02 11:17:00,293 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:17:00,293 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:17:00,296 - kayo-bot.activity - DEBUG - DB GET_TOP_USERS on users | limit=5 | result_count=1
+2026-04-02 11:17:00,296 - kayo-bot.activity - DEBUG - DB GET_TOP_USERS on users | limit=5 | result_count=1
+2026-04-02 11:17:00,297 - kayo-bot.db - DEBUG - DB GET_TOP_USERS on users | limit=5 | result_count=1
+2026-04-02 11:17:00,298 - kayo-bot - DEBUG - Function get_top_users completed successfully | function=get_top_users
+2026-04-02 11:17:00,299 - kayo-bot - DEBUG - Calling get_today_top | function=get_today_top module=bot.services.activity args_count=2 kwargs_count=0
+2026-04-02 11:17:00,299 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:17:00,300 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:17:00,303 - kayo-bot.activity - DEBUG - DB GET_TODAY_TOP on users | limit=5 | result_count=1
+2026-04-02 11:17:00,303 - kayo-bot.activity - DEBUG - DB GET_TODAY_TOP on users | limit=5 | result_count=1
+2026-04-02 11:17:00,305 - kayo-bot.db - DEBUG - DB GET_TODAY_TOP on users | limit=5 | result_count=1
+2026-04-02 11:17:00,305 - kayo-bot - DEBUG - Function get_today_top completed successfully | function=get_today_top
+2026-04-02 11:17:00,306 - kayo-bot - DEBUG - Calling close | function=close module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:17:00,309 - kayo-bot.activity - DEBUG - Database connection closed
+2026-04-02 11:17:00,309 - kayo-bot.activity - DEBUG - Database connection closed
+2026-04-02 11:17:00,310 - kayo-bot - DEBUG - Function close completed successfully | function=close
+2026-04-02 11:17:00,388 - kayo-bot - DEBUG - Calling run_diagnostics | function=run_diagnostics module=bot.diagnostics args_count=0 kwargs_count=0
+2026-04-02 11:17:00,389 - kayo-bot - DEBUG - Function run_diagnostics completed successfully | function=run_diagnostics
+2026-04-02 11:17:00,390 - kayo-bot.diagnostics - INFO - Starting comprehensive bot diagnostics
+2026-04-02 11:17:00,390 - kayo-bot.diagnostics - INFO - Starting comprehensive bot diagnostics
+2026-04-02 11:17:00,391 - kayo-bot.diagnostics - INFO - Telegram API Mocker initialized
+2026-04-02 11:17:00,391 - kayo-bot.diagnostics - INFO - Telegram API Mocker initialized
+2026-04-02 11:17:00,438 - kayo-bot.diagnostics - ERROR - Diagnostics failed: No module named 'dotenv'
+Traceback (most recent call last):
+  File "/home/skyfox/.temm1e/workspace/kayo-bot/bot/diagnostics.py", line 430, in run_diagnostics
+    tester = CommandTester()
+  File "/home/skyfox/.temm1e/workspace/kayo-bot/bot/diagnostics.py", line 162, in __init__
+    from main import (
+  File "/home/skyfox/.temm1e/workspace/kayo-bot/main.py", line 12, in <module>
+    from dotenv import load_dotenv
+ModuleNotFoundError: No module named 'dotenv'
+2026-04-02 11:17:00,438 - kayo-bot.diagnostics - ERROR - Diagnostics failed: No module named 'dotenv'
+Traceback (most recent call last):
+  File "/home/skyfox/.temm1e/workspace/kayo-bot/bot/diagnostics.py", line 430, in run_diagnostics
+    tester = CommandTester()
+  File "/home/skyfox/.temm1e/workspace/kayo-bot/bot/diagnostics.py", line 162, in __init__
+    from main import (
+  File "/home/skyfox/.temm1e/workspace/kayo-bot/main.py", line 12, in <module>
+    from dotenv import load_dotenv
+ModuleNotFoundError: No module named 'dotenv'
+2026-04-02 11:44:03,934 - kayo-bot.activity - INFO - Initializing ActivityManager | db_path=/home/skyfox/.temm1e/workspace/kayo-bot/bot/data/test_check.db
+2026-04-02 11:44:03,934 - kayo-bot.activity - INFO - Initializing ActivityManager | db_path=/home/skyfox/.temm1e/workspace/kayo-bot/bot/data/test_check.db
+2026-04-02 11:44:03,948 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:44:03,956 - kayo-bot.activity - DEBUG - Database connection established | db_path=/home/skyfox/.temm1e/workspace/kayo-bot/bot/data/test_check.db
+2026-04-02 11:44:03,956 - kayo-bot.activity - DEBUG - Database connection established | db_path=/home/skyfox/.temm1e/workspace/kayo-bot/bot/data/test_check.db
+2026-04-02 11:44:03,957 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:44:03,957 - kayo-bot - DEBUG - Calling create_table | function=create_table module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:44:03,958 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:44:03,958 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:44:03,958 - kayo-bot.activity - DEBUG - DB CREATE TABLE on users
+2026-04-02 11:44:03,958 - kayo-bot.activity - DEBUG - DB CREATE TABLE on users
+2026-04-02 11:44:03,959 - kayo-bot.db - DEBUG - DB CREATE TABLE on users
+2026-04-02 11:44:03,972 - kayo-bot.activity - DEBUG - DB CREATE TABLE on messages
+2026-04-02 11:44:03,972 - kayo-bot.activity - DEBUG - DB CREATE TABLE on messages
+2026-04-02 11:44:03,973 - kayo-bot.db - DEBUG - DB CREATE TABLE on messages
+2026-04-02 11:44:03,981 - kayo-bot.activity - DEBUG - DB CREATE TABLE on user_profiles
+2026-04-02 11:44:03,981 - kayo-bot.activity - DEBUG - DB CREATE TABLE on user_profiles
+2026-04-02 11:44:03,982 - kayo-bot.db - DEBUG - DB CREATE TABLE on user_profiles
+2026-04-02 11:44:03,990 - kayo-bot.activity - DEBUG - DB CREATE TABLE on chat_stats
+2026-04-02 11:44:03,990 - kayo-bot.activity - DEBUG - DB CREATE TABLE on chat_stats
+2026-04-02 11:44:03,991 - kayo-bot.db - DEBUG - DB CREATE TABLE on chat_stats
+2026-04-02 11:44:04,001 - kayo-bot.activity - INFO - Database tables created/verified
+2026-04-02 11:44:04,001 - kayo-bot.activity - INFO - Database tables created/verified
+2026-04-02 11:44:04,003 - kayo-bot - DEBUG - Function create_table completed successfully | function=create_table
+2026-04-02 11:44:04,003 - kayo-bot - DEBUG - Calling migrate_schema | function=migrate_schema module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:44:04,003 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:44:04,003 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:44:04,007 - kayo-bot.activity - DEBUG - Schema migration completed
+2026-04-02 11:44:04,007 - kayo-bot.activity - DEBUG - Schema migration completed
+2026-04-02 11:44:04,008 - kayo-bot - DEBUG - Function migrate_schema completed successfully | function=migrate_schema
+2026-04-02 11:44:04,009 - kayo-bot - DEBUG - Calling increment_message | function=increment_message module=bot.services.activity args_count=3 kwargs_count=0
+2026-04-02 11:44:04,009 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:44:04,010 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:44:04,020 - kayo-bot.activity - DEBUG - DB INCREMENT_MESSAGE on users | user_id=99999 | username=test_user_check | today_count=incremented
+2026-04-02 11:44:04,020 - kayo-bot.activity - DEBUG - DB INCREMENT_MESSAGE on users | user_id=99999 | username=test_user_check | today_count=incremented
+2026-04-02 11:44:04,021 - kayo-bot.db - DEBUG - DB INCREMENT_MESSAGE on users | user_id=99999 | username=test_user_check | today_count=incremented
+2026-04-02 11:44:04,022 - kayo-bot - DEBUG - Function increment_message completed successfully | function=increment_message
+2026-04-02 11:44:04,022 - kayo-bot - DEBUG - Calling store_message | function=store_message module=bot.services.activity args_count=3 kwargs_count=0
+2026-04-02 11:44:04,022 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:44:04,023 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:44:04,034 - kayo-bot.activity - DEBUG - Message stored for topic analysis | user_id=99999 message_length=31
+2026-04-02 11:44:04,034 - kayo-bot.activity - DEBUG - Message stored for topic analysis | user_id=99999 message_length=31
+2026-04-02 11:44:04,035 - kayo-bot - DEBUG - Function store_message completed successfully | function=store_message
+2026-04-02 11:44:04,036 - kayo-bot - DEBUG - Calling get_user_stats | function=get_user_stats module=bot.services.activity args_count=2 kwargs_count=0
+2026-04-02 11:44:04,036 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:44:04,037 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:44:04,039 - kayo-bot.activity - DEBUG - DB GET_USER_STATS on users | user_id=99999 | found=True
+2026-04-02 11:44:04,039 - kayo-bot.activity - DEBUG - DB GET_USER_STATS on users | user_id=99999 | found=True
+2026-04-02 11:44:04,040 - kayo-bot.db - DEBUG - DB GET_USER_STATS on users | user_id=99999 | found=True
+2026-04-02 11:44:04,041 - kayo-bot - DEBUG - Function get_user_stats completed successfully | function=get_user_stats
+2026-04-02 11:44:04,042 - kayo-bot - DEBUG - Calling get_top_users | function=get_top_users module=bot.services.activity args_count=2 kwargs_count=0
+2026-04-02 11:44:04,043 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:44:04,043 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:44:04,046 - kayo-bot.activity - DEBUG - DB GET_TOP_USERS on users | limit=3 | result_count=1
+2026-04-02 11:44:04,046 - kayo-bot.activity - DEBUG - DB GET_TOP_USERS on users | limit=3 | result_count=1
+2026-04-02 11:44:04,047 - kayo-bot.db - DEBUG - DB GET_TOP_USERS on users | limit=3 | result_count=1
+2026-04-02 11:44:04,048 - kayo-bot - DEBUG - Function get_top_users completed successfully | function=get_top_users
+2026-04-02 11:44:04,048 - kayo-bot - DEBUG - Calling get_today_top | function=get_today_top module=bot.services.activity args_count=2 kwargs_count=0
+2026-04-02 11:44:04,048 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:44:04,049 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:44:04,052 - kayo-bot.activity - DEBUG - DB GET_TODAY_TOP on users | limit=3 | result_count=1
+2026-04-02 11:44:04,052 - kayo-bot.activity - DEBUG - DB GET_TODAY_TOP on users | limit=3 | result_count=1
+2026-04-02 11:44:04,053 - kayo-bot.db - DEBUG - DB GET_TODAY_TOP on users | limit=3 | result_count=1
+2026-04-02 11:44:04,054 - kayo-bot - DEBUG - Function get_today_top completed successfully | function=get_today_top
+2026-04-02 11:44:04,055 - kayo-bot - DEBUG - Calling close | function=close module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:44:04,057 - kayo-bot.activity - DEBUG - Database connection closed
+2026-04-02 11:44:04,057 - kayo-bot.activity - DEBUG - Database connection closed
+2026-04-02 11:44:04,059 - kayo-bot - DEBUG - Function close completed successfully | function=close
+2026-04-02 11:44:17,287 - kayo-bot.activity - INFO - Initializing ActivityManager | db_path=/home/skyfox/.temm1e/workspace/kayo-bot/bot/data/test_check.db
+2026-04-02 11:44:17,287 - kayo-bot.activity - INFO - Initializing ActivityManager | db_path=/home/skyfox/.temm1e/workspace/kayo-bot/bot/data/test_check.db
+2026-04-02 11:44:17,289 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:44:17,292 - kayo-bot.activity - DEBUG - Database connection established | db_path=/home/skyfox/.temm1e/workspace/kayo-bot/bot/data/test_check.db
+2026-04-02 11:44:17,292 - kayo-bot.activity - DEBUG - Database connection established | db_path=/home/skyfox/.temm1e/workspace/kayo-bot/bot/data/test_check.db
+2026-04-02 11:44:17,293 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:44:17,293 - kayo-bot - DEBUG - Calling create_table | function=create_table module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:44:17,294 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:44:17,294 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:44:17,294 - kayo-bot.activity - DEBUG - DB CREATE TABLE on users
+2026-04-02 11:44:17,294 - kayo-bot.activity - DEBUG - DB CREATE TABLE on users
+2026-04-02 11:44:17,295 - kayo-bot.db - DEBUG - DB CREATE TABLE on users
+2026-04-02 11:44:17,307 - kayo-bot.activity - DEBUG - DB CREATE TABLE on messages
+2026-04-02 11:44:17,307 - kayo-bot.activity - DEBUG - DB CREATE TABLE on messages
+2026-04-02 11:44:17,308 - kayo-bot.db - DEBUG - DB CREATE TABLE on messages
+2026-04-02 11:44:17,323 - kayo-bot.activity - DEBUG - DB CREATE TABLE on user_profiles
+2026-04-02 11:44:17,323 - kayo-bot.activity - DEBUG - DB CREATE TABLE on user_profiles
+2026-04-02 11:44:17,324 - kayo-bot.db - DEBUG - DB CREATE TABLE on user_profiles
+2026-04-02 11:44:17,339 - kayo-bot.activity - DEBUG - DB CREATE TABLE on chat_stats
+2026-04-02 11:44:17,339 - kayo-bot.activity - DEBUG - DB CREATE TABLE on chat_stats
+2026-04-02 11:44:17,341 - kayo-bot.db - DEBUG - DB CREATE TABLE on chat_stats
+2026-04-02 11:44:17,361 - kayo-bot.activity - INFO - Database tables created/verified
+2026-04-02 11:44:17,361 - kayo-bot.activity - INFO - Database tables created/verified
+2026-04-02 11:44:17,364 - kayo-bot - DEBUG - Function create_table completed successfully | function=create_table
+2026-04-02 11:44:17,365 - kayo-bot - DEBUG - Calling migrate_schema | function=migrate_schema module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:44:17,365 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:44:17,366 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:44:17,378 - kayo-bot.activity - DEBUG - Schema migration completed
+2026-04-02 11:44:17,378 - kayo-bot.activity - DEBUG - Schema migration completed
+2026-04-02 11:44:17,379 - kayo-bot - DEBUG - Function migrate_schema completed successfully | function=migrate_schema
+2026-04-02 11:44:17,381 - kayo-bot - DEBUG - Calling increment_message | function=increment_message module=bot.services.activity args_count=3 kwargs_count=0
+2026-04-02 11:44:17,381 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:44:17,382 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:44:17,407 - kayo-bot.activity - DEBUG - DB INCREMENT_MESSAGE on users | user_id=99999 | username=test_user_check | today_count=incremented
+2026-04-02 11:44:17,407 - kayo-bot.activity - DEBUG - DB INCREMENT_MESSAGE on users | user_id=99999 | username=test_user_check | today_count=incremented
+2026-04-02 11:44:17,410 - kayo-bot.db - DEBUG - DB INCREMENT_MESSAGE on users | user_id=99999 | username=test_user_check | today_count=incremented
+2026-04-02 11:44:17,412 - kayo-bot - DEBUG - Function increment_message completed successfully | function=increment_message
+2026-04-02 11:44:17,413 - kayo-bot - DEBUG - Calling store_message | function=store_message module=bot.services.activity args_count=3 kwargs_count=0
+2026-04-02 11:44:17,414 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:44:17,415 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:44:17,447 - kayo-bot.activity - DEBUG - Message stored for topic analysis | user_id=99999 message_length=31
+2026-04-02 11:44:17,447 - kayo-bot.activity - DEBUG - Message stored for topic analysis | user_id=99999 message_length=31
+2026-04-02 11:44:17,450 - kayo-bot - DEBUG - Function store_message completed successfully | function=store_message
+2026-04-02 11:44:17,452 - kayo-bot - DEBUG - Calling get_user_stats | function=get_user_stats module=bot.services.activity args_count=2 kwargs_count=0
+2026-04-02 11:44:17,453 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:44:17,453 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:44:17,459 - kayo-bot.activity - DEBUG - DB GET_USER_STATS on users | user_id=99999 | found=True
+2026-04-02 11:44:17,459 - kayo-bot.activity - DEBUG - DB GET_USER_STATS on users | user_id=99999 | found=True
+2026-04-02 11:44:17,462 - kayo-bot.db - DEBUG - DB GET_USER_STATS on users | user_id=99999 | found=True
+2026-04-02 11:44:17,466 - kayo-bot - DEBUG - Function get_user_stats completed successfully | function=get_user_stats
+2026-04-02 11:44:17,467 - kayo-bot - DEBUG - Calling get_top_users | function=get_top_users module=bot.services.activity args_count=2 kwargs_count=0
+2026-04-02 11:44:17,468 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:44:17,468 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:44:17,476 - kayo-bot.activity - DEBUG - DB GET_TOP_USERS on users | limit=3 | result_count=1
+2026-04-02 11:44:17,476 - kayo-bot.activity - DEBUG - DB GET_TOP_USERS on users | limit=3 | result_count=1
+2026-04-02 11:44:17,478 - kayo-bot.db - DEBUG - DB GET_TOP_USERS on users | limit=3 | result_count=1
+2026-04-02 11:44:17,479 - kayo-bot - DEBUG - Function get_top_users completed successfully | function=get_top_users
+2026-04-02 11:44:17,481 - kayo-bot - DEBUG - Calling get_today_top | function=get_today_top module=bot.services.activity args_count=2 kwargs_count=0
+2026-04-02 11:44:17,481 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:44:17,482 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:44:17,485 - kayo-bot.activity - DEBUG - DB GET_TODAY_TOP on users | limit=3 | result_count=1
+2026-04-02 11:44:17,485 - kayo-bot.activity - DEBUG - DB GET_TODAY_TOP on users | limit=3 | result_count=1
+2026-04-02 11:44:17,487 - kayo-bot.db - DEBUG - DB GET_TODAY_TOP on users | limit=3 | result_count=1
+2026-04-02 11:44:17,488 - kayo-bot - DEBUG - Function get_today_top completed successfully | function=get_today_top
+2026-04-02 11:44:17,489 - kayo-bot - DEBUG - Calling close | function=close module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:44:17,492 - kayo-bot.activity - DEBUG - Database connection closed
+2026-04-02 11:44:17,492 - kayo-bot.activity - DEBUG - Database connection closed
+2026-04-02 11:44:17,493 - kayo-bot - DEBUG - Function close completed successfully | function=close
+2026-04-02 11:47:00,780 - kayo-bot.activity - INFO - Initializing ActivityManager | db_path=/home/skyfox/.temm1e/workspace/kayo-bot/bot/data/test_check.db
+2026-04-02 11:47:00,780 - kayo-bot.activity - INFO - Initializing ActivityManager | db_path=/home/skyfox/.temm1e/workspace/kayo-bot/bot/data/test_check.db
+2026-04-02 11:47:00,784 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:47:00,790 - kayo-bot.activity - DEBUG - Database connection established | db_path=/home/skyfox/.temm1e/workspace/kayo-bot/bot/data/test_check.db
+2026-04-02 11:47:00,790 - kayo-bot.activity - DEBUG - Database connection established | db_path=/home/skyfox/.temm1e/workspace/kayo-bot/bot/data/test_check.db
+2026-04-02 11:47:00,791 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:47:00,792 - kayo-bot - DEBUG - Calling create_table | function=create_table module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:47:00,792 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:47:00,793 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:47:00,793 - kayo-bot.activity - DEBUG - DB CREATE TABLE on users
+2026-04-02 11:47:00,793 - kayo-bot.activity - DEBUG - DB CREATE TABLE on users
+2026-04-02 11:47:00,794 - kayo-bot.db - DEBUG - DB CREATE TABLE on users
+2026-04-02 11:47:00,837 - kayo-bot.activity - DEBUG - DB CREATE TABLE on messages
+2026-04-02 11:47:00,837 - kayo-bot.activity - DEBUG - DB CREATE TABLE on messages
+2026-04-02 11:47:00,839 - kayo-bot.db - DEBUG - DB CREATE TABLE on messages
+2026-04-02 11:47:00,859 - kayo-bot.activity - DEBUG - DB CREATE TABLE on user_profiles
+2026-04-02 11:47:00,859 - kayo-bot.activity - DEBUG - DB CREATE TABLE on user_profiles
+2026-04-02 11:47:00,860 - kayo-bot.db - DEBUG - DB CREATE TABLE on user_profiles
+2026-04-02 11:47:00,879 - kayo-bot.activity - DEBUG - DB CREATE TABLE on chat_stats
+2026-04-02 11:47:00,879 - kayo-bot.activity - DEBUG - DB CREATE TABLE on chat_stats
+2026-04-02 11:47:00,880 - kayo-bot.db - DEBUG - DB CREATE TABLE on chat_stats
+2026-04-02 11:47:00,898 - kayo-bot.activity - INFO - Database tables created/verified
+2026-04-02 11:47:00,898 - kayo-bot.activity - INFO - Database tables created/verified
+2026-04-02 11:47:00,900 - kayo-bot - DEBUG - Function create_table completed successfully | function=create_table
+2026-04-02 11:47:00,901 - kayo-bot - DEBUG - Calling migrate_schema | function=migrate_schema module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:47:00,902 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:47:00,902 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:47:00,910 - kayo-bot.activity - DEBUG - Schema migration completed
+2026-04-02 11:47:00,910 - kayo-bot.activity - DEBUG - Schema migration completed
+2026-04-02 11:47:00,912 - kayo-bot - DEBUG - Function migrate_schema completed successfully | function=migrate_schema
+2026-04-02 11:47:00,912 - kayo-bot - DEBUG - Calling increment_message | function=increment_message module=bot.services.activity args_count=3 kwargs_count=0
+2026-04-02 11:47:00,913 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:47:00,913 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:47:00,939 - kayo-bot.activity - DEBUG - DB INCREMENT_MESSAGE on users | user_id=99999 | username=test_user_check | today_count=incremented
+2026-04-02 11:47:00,939 - kayo-bot.activity - DEBUG - DB INCREMENT_MESSAGE on users | user_id=99999 | username=test_user_check | today_count=incremented
+2026-04-02 11:47:00,943 - kayo-bot.db - DEBUG - DB INCREMENT_MESSAGE on users | user_id=99999 | username=test_user_check | today_count=incremented
+2026-04-02 11:47:00,944 - kayo-bot - DEBUG - Function increment_message completed successfully | function=increment_message
+2026-04-02 11:47:00,945 - kayo-bot - DEBUG - Calling store_message | function=store_message module=bot.services.activity args_count=3 kwargs_count=0
+2026-04-02 11:47:00,946 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:47:00,946 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:47:00,973 - kayo-bot.activity - DEBUG - Message stored for topic analysis | user_id=99999 message_length=31
+2026-04-02 11:47:00,973 - kayo-bot.activity - DEBUG - Message stored for topic analysis | user_id=99999 message_length=31
+2026-04-02 11:47:00,976 - kayo-bot - DEBUG - Function store_message completed successfully | function=store_message
+2026-04-02 11:47:00,976 - kayo-bot - DEBUG - Calling get_user_stats | function=get_user_stats module=bot.services.activity args_count=2 kwargs_count=0
+2026-04-02 11:47:00,977 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:47:00,978 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:47:00,986 - kayo-bot.activity - DEBUG - DB GET_USER_STATS on users | user_id=99999 | found=True
+2026-04-02 11:47:00,986 - kayo-bot.activity - DEBUG - DB GET_USER_STATS on users | user_id=99999 | found=True
+2026-04-02 11:47:00,988 - kayo-bot.db - DEBUG - DB GET_USER_STATS on users | user_id=99999 | found=True
+2026-04-02 11:47:00,993 - kayo-bot - DEBUG - Function get_user_stats completed successfully | function=get_user_stats
+2026-04-02 11:47:00,995 - kayo-bot - DEBUG - Calling get_top_users | function=get_top_users module=bot.services.activity args_count=2 kwargs_count=0
+2026-04-02 11:47:00,996 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:47:00,997 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:47:01,006 - kayo-bot.activity - DEBUG - DB GET_TOP_USERS on users | limit=3 | result_count=1
+2026-04-02 11:47:01,006 - kayo-bot.activity - DEBUG - DB GET_TOP_USERS on users | limit=3 | result_count=1
+2026-04-02 11:47:01,007 - kayo-bot.db - DEBUG - DB GET_TOP_USERS on users | limit=3 | result_count=1
+2026-04-02 11:47:01,009 - kayo-bot - DEBUG - Function get_top_users completed successfully | function=get_top_users
+2026-04-02 11:47:01,009 - kayo-bot - DEBUG - Calling get_today_top | function=get_today_top module=bot.services.activity args_count=2 kwargs_count=0
+2026-04-02 11:47:01,010 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:47:01,010 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:47:01,014 - kayo-bot.activity - DEBUG - DB GET_TODAY_TOP on users | limit=3 | result_count=1
+2026-04-02 11:47:01,014 - kayo-bot.activity - DEBUG - DB GET_TODAY_TOP on users | limit=3 | result_count=1
+2026-04-02 11:47:01,016 - kayo-bot.db - DEBUG - DB GET_TODAY_TOP on users | limit=3 | result_count=1
+2026-04-02 11:47:01,017 - kayo-bot - DEBUG - Function get_today_top completed successfully | function=get_today_top
+2026-04-02 11:47:01,017 - kayo-bot - DEBUG - Calling close | function=close module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:47:01,021 - kayo-bot.activity - DEBUG - Database connection closed
+2026-04-02 11:47:01,021 - kayo-bot.activity - DEBUG - Database connection closed
+2026-04-02 11:47:01,022 - kayo-bot - DEBUG - Function close completed successfully | function=close
+2026-04-02 11:47:23,559 - kayo-bot.activity - INFO - Initializing ActivityManager | db_path=/home/skyfox/.temm1e/workspace/kayo-bot/bot/data/test_check.db
+2026-04-02 11:47:23,559 - kayo-bot.activity - INFO - Initializing ActivityManager | db_path=/home/skyfox/.temm1e/workspace/kayo-bot/bot/data/test_check.db
+2026-04-02 11:47:23,560 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:47:23,567 - kayo-bot.activity - DEBUG - Database connection established | db_path=/home/skyfox/.temm1e/workspace/kayo-bot/bot/data/test_check.db
+2026-04-02 11:47:23,567 - kayo-bot.activity - DEBUG - Database connection established | db_path=/home/skyfox/.temm1e/workspace/kayo-bot/bot/data/test_check.db
+2026-04-02 11:47:23,568 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:47:23,568 - kayo-bot - DEBUG - Calling create_table | function=create_table module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:47:23,568 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:47:23,568 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:47:23,569 - kayo-bot.activity - DEBUG - DB CREATE TABLE on users
+2026-04-02 11:47:23,569 - kayo-bot.activity - DEBUG - DB CREATE TABLE on users
+2026-04-02 11:47:23,569 - kayo-bot.db - DEBUG - DB CREATE TABLE on users
+2026-04-02 11:47:23,599 - kayo-bot.activity - DEBUG - DB CREATE TABLE on messages
+2026-04-02 11:47:23,599 - kayo-bot.activity - DEBUG - DB CREATE TABLE on messages
+2026-04-02 11:47:23,602 - kayo-bot.db - DEBUG - DB CREATE TABLE on messages
+2026-04-02 11:47:23,628 - kayo-bot.activity - DEBUG - DB CREATE TABLE on user_profiles
+2026-04-02 11:47:23,628 - kayo-bot.activity - DEBUG - DB CREATE TABLE on user_profiles
+2026-04-02 11:47:23,630 - kayo-bot.db - DEBUG - DB CREATE TABLE on user_profiles
+2026-04-02 11:47:23,664 - kayo-bot.activity - DEBUG - DB CREATE TABLE on chat_stats
+2026-04-02 11:47:23,664 - kayo-bot.activity - DEBUG - DB CREATE TABLE on chat_stats
+2026-04-02 11:47:23,666 - kayo-bot.db - DEBUG - DB CREATE TABLE on chat_stats
+2026-04-02 11:47:23,689 - kayo-bot.activity - INFO - Database tables created/verified
+2026-04-02 11:47:23,689 - kayo-bot.activity - INFO - Database tables created/verified
+2026-04-02 11:47:23,693 - kayo-bot - DEBUG - Function create_table completed successfully | function=create_table
+2026-04-02 11:47:23,694 - kayo-bot - DEBUG - Calling migrate_schema | function=migrate_schema module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:47:23,695 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:47:23,695 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:47:23,703 - kayo-bot.activity - DEBUG - Schema migration completed
+2026-04-02 11:47:23,703 - kayo-bot.activity - DEBUG - Schema migration completed
+2026-04-02 11:47:23,704 - kayo-bot - DEBUG - Function migrate_schema completed successfully | function=migrate_schema
+2026-04-02 11:47:23,705 - kayo-bot - DEBUG - Calling increment_message | function=increment_message module=bot.services.activity args_count=3 kwargs_count=0
+2026-04-02 11:47:23,706 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:47:23,706 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:47:23,721 - kayo-bot.activity - DEBUG - DB INCREMENT_MESSAGE on users | user_id=99999 | username=test_user_check | today_count=incremented
+2026-04-02 11:47:23,721 - kayo-bot.activity - DEBUG - DB INCREMENT_MESSAGE on users | user_id=99999 | username=test_user_check | today_count=incremented
+2026-04-02 11:47:23,722 - kayo-bot.db - DEBUG - DB INCREMENT_MESSAGE on users | user_id=99999 | username=test_user_check | today_count=incremented
+2026-04-02 11:47:23,723 - kayo-bot - DEBUG - Function increment_message completed successfully | function=increment_message
+2026-04-02 11:47:23,723 - kayo-bot - DEBUG - Calling store_message | function=store_message module=bot.services.activity args_count=3 kwargs_count=0
+2026-04-02 11:47:23,724 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:47:23,724 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:47:23,736 - kayo-bot.activity - DEBUG - Message stored for topic analysis | user_id=99999 message_length=31
+2026-04-02 11:47:23,736 - kayo-bot.activity - DEBUG - Message stored for topic analysis | user_id=99999 message_length=31
+2026-04-02 11:47:23,737 - kayo-bot - DEBUG - Function store_message completed successfully | function=store_message
+2026-04-02 11:47:23,737 - kayo-bot - DEBUG - Calling get_user_stats | function=get_user_stats module=bot.services.activity args_count=2 kwargs_count=0
+2026-04-02 11:47:23,737 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:47:23,738 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:47:23,740 - kayo-bot.activity - DEBUG - DB GET_USER_STATS on users | user_id=99999 | found=True
+2026-04-02 11:47:23,740 - kayo-bot.activity - DEBUG - DB GET_USER_STATS on users | user_id=99999 | found=True
+2026-04-02 11:47:23,741 - kayo-bot.db - DEBUG - DB GET_USER_STATS on users | user_id=99999 | found=True
+2026-04-02 11:47:23,742 - kayo-bot - DEBUG - Function get_user_stats completed successfully | function=get_user_stats
+2026-04-02 11:47:23,742 - kayo-bot - DEBUG - Calling get_top_users | function=get_top_users module=bot.services.activity args_count=2 kwargs_count=0
+2026-04-02 11:47:23,743 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:47:23,743 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:47:23,746 - kayo-bot.activity - DEBUG - DB GET_TOP_USERS on users | limit=3 | result_count=1
+2026-04-02 11:47:23,746 - kayo-bot.activity - DEBUG - DB GET_TOP_USERS on users | limit=3 | result_count=1
+2026-04-02 11:47:23,746 - kayo-bot.db - DEBUG - DB GET_TOP_USERS on users | limit=3 | result_count=1
+2026-04-02 11:47:23,747 - kayo-bot - DEBUG - Function get_top_users completed successfully | function=get_top_users
+2026-04-02 11:47:23,747 - kayo-bot - DEBUG - Calling get_today_top | function=get_today_top module=bot.services.activity args_count=2 kwargs_count=0
+2026-04-02 11:47:23,748 - kayo-bot - DEBUG - Calling ensure_connection | function=ensure_connection module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:47:23,748 - kayo-bot - DEBUG - Function ensure_connection completed successfully | function=ensure_connection
+2026-04-02 11:47:23,751 - kayo-bot.activity - DEBUG - DB GET_TODAY_TOP on users | limit=3 | result_count=1
+2026-04-02 11:47:23,751 - kayo-bot.activity - DEBUG - DB GET_TODAY_TOP on users | limit=3 | result_count=1
+2026-04-02 11:47:23,753 - kayo-bot.db - DEBUG - DB GET_TODAY_TOP on users | limit=3 | result_count=1
+2026-04-02 11:47:23,753 - kayo-bot - DEBUG - Function get_today_top completed successfully | function=get_today_top
+2026-04-02 11:47:23,754 - kayo-bot - DEBUG - Calling close | function=close module=bot.services.activity args_count=1 kwargs_count=0
+2026-04-02 11:47:23,757 - kayo-bot.activity - DEBUG - Database connection closed
+2026-04-02 11:47:23,757 - kayo-bot.activity - DEBUG - Database connection closed
+2026-04-02 11:47:23,758 - kayo-bot - DEBUG - Function close completed successfully | function=close
