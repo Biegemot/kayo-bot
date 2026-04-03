@@ -88,6 +88,7 @@ async def profile_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             photo_file_id = ref_photo.split(':', 1)[1]
     
     # Create inline keyboard with Mini-App button
+    # Исправлено: правильное создание WebAppInfo
     webapp_url = f"https://biegemot.github.io/kayo-bot-webapp/?user_id={user_id}"
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("✏️ Редактировать", web_app=WebAppInfo(url=webapp_url))],

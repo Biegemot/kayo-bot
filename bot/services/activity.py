@@ -375,8 +375,8 @@ class ActivityManager:
             
             self.conn.commit()
             
-            logger.log_database(f"SAVE_PROFILE_FIELD", "user_profiles", 
-                               user_id=user_id, field=field, operation=operation)
+            logger.log_database(f"SAVE_PROFILE_FIELD_{operation}", "user_profiles", 
+                               user_id=user_id, field=field, value=value)
             
         except Exception as e:
             logger.error(f"Failed to save profile field: {e}", 

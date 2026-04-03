@@ -262,14 +262,6 @@ def main() -> None:
     except Exception as e:
         logger.error(f"Failed to register profile handlers: {e}")
     
-    # Register webapp handlers
-    try:
-        from bot.handlers.webapp import register_webapp_handlers
-        register_webapp_handlers(application)
-        logger.info("WebApp handlers registered")
-    except Exception as e:
-        logger.error(f"Failed to register webapp handlers: {e}")
-    
     # Register stats handlers
     try:
         from bot.handlers.stats import register_stats_handlers
@@ -300,7 +292,6 @@ def main() -> None:
         BotCommand("today", "Активность за сегодня"),
         BotCommand("me", "Моя анкета"),
         BotCommand("stats", "Моя статистика"),
-        BotCommand("webapp", "Открыть Mini-App для анкеты"),
         BotCommand("titles", "Список титулов"),
         BotCommand("summarize", "Итоги дня"),
         BotCommand("update", "Проверить обновления"),
