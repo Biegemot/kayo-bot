@@ -49,12 +49,12 @@ jobs:
           if os.name == 'nt':
               # Add current directory to path
               sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-              
-              # Fix for Windows console encoding
-              if sys.stdout.encoding != 'utf-8':
-                  import io
-                  sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-                  sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+          
+          # Fix for Windows console encoding
+          if sys.stdout.encoding != 'utf-8':
+              import io
+              sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+              sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
           
           # Import and run main
           from main import main
@@ -62,6 +62,14 @@ jobs:
           if __name__ == '__main__':
               main()
           EOF
+          
+          echo "notes_created=true" >> $GITHUB_OUTPUT
+
+      - name: Fix icon file permissions
+        shell: bash
+        run: |
+          chmod 644 bot/assets/icon.ico
+          ls -la bot/assets/icon.ico
 
       - name: Build Windows exe with improved compatibility
         shell: bash
@@ -93,20 +101,12 @@ jobs:
           @echo off
           chcp 65001 > nul
           echo Starting Kayo Bot...
-          echo.
-          
-          if not exist ".env" (
-            echo [WARNING] .env file not found!
-            echo Creating from example...
-            copy .env.example .env > nul
-            echo Please edit .env file and add your Telegram Bot Token
-            echo Then run this script again.
-            pause
-            exit /b 1
+          if exist "%~dp0kayo-bot-v${{ steps.version.outputs.version }}-windows.exe" (
+              "%~dp0kayo-bot-v${{ steps.version.outputs.version }}-windows.exe"
+          ) else (
+              echo Error: Could not find Kayo Bot executable.
+              pause
           )
-          
-          kayo-bot-v${{ steps.version.outputs.version }}-windows.exe
-          pause
           EOF
 
       - name: Upload Windows artifacts
@@ -126,6 +126,7 @@ jobs:
 
       - name: Read version
         id: version
+        shell: bash
         run: echo "version=$(cat version.txt | tr -d '[:space:]')" >> $GITHUB_OUTPUT
 
       - uses: actions/setup-python@v5
@@ -139,6 +140,7 @@ jobs:
           pip install pyinstaller
 
       - name: Build Linux binary
+        shell: bash
         run: |
           pyinstaller --onefile \
             --name "kayo-bot-v${{ steps.version.outputs.version }}-linux" \
@@ -155,31 +157,28 @@ jobs:
             --add-data "bot:bot" \
             --add-data "version.txt:." \
             --add-data ".env.example:." \
-            main.py
+            windows_main.py
 
       - name: Create Linux launcher script
+        shell: bash
         run: |
-          # Create a shell script for Linux users
+          # Create a simple shell script for Linux users
           cat > launch_kayo.sh << 'EOF'
           #!/bin/bash
           echo "Starting Kayo Bot..."
-          echo ""
-          
-          if [ ! -f ".env" ]; then
-            echo "[WARNING] .env file not found!"
-            echo "Creating from example..."
-            cp .env.example .env
-            echo "Please edit .env file and add your Telegram Bot Token"
-            echo "Then run this script again."
-            read -p "Press Enter to edit .env file now..." 
-            nano .env
-            exit 1
+          cd "$(dirname "$0")"
+          if [ -f "./kayo-bot-v${{ steps.version.outputs.version }}-linux" ]; then
+              chmod +x "./kayo-bot-v${{ steps.version.outputs.version }}-linux"
+              ./kayo-bot-v${{ steps.version.outputs.version }}-linux
+          else
+              echo "Error: Could not find Kayo Bot executable."
+              exit 1
           fi
-          
-          ./kayo-bot-v${{ steps.version.outputs.version }}-linux
           EOF
-          
-          chmod +x launch_kayo.sh
+
+      - name: Make launcher script executable
+        shell: bash
+        run: chmod +x launch_kayo.sh
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
@@ -189,7 +188,7 @@ jobs:
             dist/kayo-bot-v${{ steps.version.outputs.version }}-linux
             launch_kayo.sh
 
-  release:
+  create-release:
     needs: [build-windows, build-linux]
     runs-on: ubuntu-latest
     steps:
@@ -199,79 +198,20 @@ jobs:
 
       - name: Read version
         id: version
+        shell: bash
         run: echo "version=$(cat version.txt | tr -d '[:space:]')" >> $GITHUB_OUTPUT
 
-      - name: Check if tag exists
-        id: tag_check
-        run: |
-          if git ls-remote --tags origin "refs/tags/v${{ steps.version.outputs.version }}" | grep -q .; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Create tag
-        if: steps.tag_check.outputs.exists == 'false'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag v${{ steps.version.outputs.version }}
-          git push origin v${{ steps.version.outputs.version }}
-
-      - name: Download Windows artifact
+      - name: Download Windows artifacts
         uses: actions/download-artifact@v4
         with:
           name: kayo-bot-windows-v${{ steps.version.outputs.version }}
           path: artifacts/windows
 
-      - name: Download Linux artifact
+      - name: Download Linux artifacts
         uses: actions/download-artifact@v4
         with:
           name: kayo-bot-linux-v${{ steps.version.outputs.version }}
           path: artifacts/linux
-
-      - name: Create release notes
-        id: release_notes
-        run: |
-          # Extract changelog for this version
-          VERSION="${{ steps.version.outputs.version }}"
-          CHANGELOG_CONTENT=$(awk "/^## \[$VERSION\]/,/^## \[/" CHANGELOG.md | head -n -1)
-          
-          # Create release notes file
-          cat > release_notes.md << EOF
-          # Kayo Bot v$VERSION
-          
-          ## 🚀 Что нового
-          
-          $CHANGELOG_CONTENT
-          
-          ## 📦 Загрузки
-          
-          ### Windows
-          - **kayo-bot-v$VERSION-windows.exe** - Исполняемый файл для Windows
-          - **launch_kayo.bat** - Скрипт запуска
-          
-          ### Linux
-          - **kayo-bot-v$VERSION-linux** - Исполняемый файл для Linux
-          - **launch_kayo.sh** - Скрипт запуска
-          
-          ## 📖 Быстрый старт
-          
-          1. Скачайте файл для вашей ОС
-          2. Распакуйте архив
-          3. Отредактируйте файл \`.env\` и добавьте токен бота
-          4. Запустите бота
-          
-          ## 🔧 Установка
-          
-          Подробные инструкции в [README.md](https://github.com/Biegemot/kayo-bot/blob/main/README.md)
-          
-          ## 🤝 Вклад
-          
-          Хотите помочь проекту? См. [CONTRIBUTING.md](https://github.com/Biegemot/kayo-bot/blob/main/CONTRIBUTING.md)
-          EOF
-          
-          echo "notes_created=true" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
