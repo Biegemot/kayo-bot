@@ -95,29 +95,12 @@ jobs:
             --windowed \
             windows_main.py
 
-      - name: Create Windows launcher script
-        shell: bash
-        run: |
-          # Create a simple batch file for Windows users
-          cat > launch_kayo.bat << 'EOF'
-          @echo off
-          chcp 65001 > nul
-          echo Starting Kayo Bot...
-          if exist "%~dp0kayo-bot-v${{ steps.version.outputs.version }}-windows.exe" (
-              "%~dp0kayo-bot-v${{ steps.version.outputs.version }}-windows.exe"
-          ) else (
-              echo Error: Could not find Kayo Bot executable.
-              pause
-          )
-          EOF
-
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
           name: kayo-bot-windows-v${{ steps.version.outputs.version }}
           path: |
             dist/kayo-bot-v${{ steps.version.outputs.version }}-windows.exe
-            launch_kayo.bat
 
   build-linux:
     runs-on: ubuntu-latest
@@ -161,34 +144,12 @@ jobs:
             --add-data ".env.example:." \
             main.py
 
-      - name: Create Linux launcher script
-        shell: bash
-        run: |
-          # Create a simple shell script for Linux users
-          cat > launch_kayo.sh << 'EOF'
-          #!/bin/bash
-          echo "Starting Kayo Bot..."
-          cd "$(dirname "$0")"
-          if [ -f "./kayo-bot-v${{ steps.version.outputs.version }}-linux" ]; then
-              chmod +x "./kayo-bot-v${{ steps.version.outputs.version }}-linux"
-              ./kayo-bot-v${{ steps.version.outputs.version }}-linux
-          else
-              echo "Error: Could not find Kayo Bot executable."
-              exit 1
-          fi
-          EOF
-
-      - name: Make launcher script executable
-        shell: bash
-        run: chmod +x launch_kayo.sh
-
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
           name: kayo-bot-linux-v${{ steps.version.outputs.version }}
           path: |
             dist/kayo-bot-v${{ steps.version.outputs.version }}-linux
-            launch_kayo.sh
 
   create-release:
     needs: [build-windows, build-linux]
@@ -225,8 +186,6 @@ jobs:
           prerelease: false
           files: |
             artifacts/windows/kayo-bot-v${{ steps.version.outputs.version }}-windows.exe
-            artifacts/windows/launch_kayo.bat
             artifacts/linux/kayo-bot-v${{ steps.version.outputs.version }}-linux
-            artifacts/linux/launch_kayo.sh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
