@@ -1,331 +1,293 @@
-"""
-Profile system for Kayo Bot
-Allows users to create and manage their fursona profiles
-"""
+# Обновлённый обработчик профиля `/me`
+# Без WebApp — всё inline, с автоудалением сообщений
+
+from telegram import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    Update,
+)
+from telegram.ext import (
+    Application,
+    CallbackQueryHandler,
+    CommandHandler,
+    ContextTypes,
+    MessageHandler,
+    filters,
+)
 import logging
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
-from telegram.ext import ContextTypes, CallbackQueryHandler, CommandHandler, MessageHandler, filters
 
 logger = logging.getLogger(__name__)
 
-# Field labels for display
-FIELD_LABELS = {
-    'fursona_name': '🐾 Имя фурсоны',
-    'species': '🦊 Вид',
-    'birth_date': '🎂 Дата рождения',
-    'age': '🔢 Возраст',
-    'orientation': '💕 Ориентация',
-    'city': '🏙️ Город',
-    'looking_for': '🤝 Ищет',
-    'personality_type': '🎭 Тип личности',
-    'reference_photo': '🖼️ Референс'
-}
-
-# Field descriptions for input prompts
-FIELD_PROMPTS = {
-    'fursona_name': "Введите имя фурсоны:",
-    'species': "Введите вид (например, лис, волк, кот, дракон):",
-    'birth_date': "Введите дату рождения (ДД.ММ.ГГГГ):",
-    'age': "Введите возраст:",
-    'orientation': "Введите ориентацию (например, гетеро, гей, би, пан):",
-    'city': "Введите город:",
-    'looking_for': "Введите, кого ищете (например, друга, парня, девочку):",
-    'reference_photo': "Отправьте фото референса или URL:"
-}
-
-# Personality types for inline selection
-PERSONALITY_TYPES = [
-    "Интроверт",
-    "Экстраверт",
-    "Амбиверт"
+# ──────────────────────────────────────────────────────
+# Profile fields
+# ──────────────────────────────────────────────────────
+PROFILE_FIELDS = [
+    "fursona_name",
+    "species",
+    "birth_date",
+    "age",
+    "orientation",
+    "city",
+    "looking_for",
+    "personality_type",
+    "reference_photo",
 ]
 
+FIELD_LABELS = {
+    "fursona_name": "Имя фурсоны",
+    "species": "Вид",
+    "birth_date": "Дата рождения",
+    "age": "Возраст",
+    "orientation": "Ориентация",
+    "city": "Город",
+    "looking_for": "Ищу",
+    "personality_type": "Тип личности",
+    "reference_photo": "Референс (фото)",
+}
 
-async def generate_profile_text(user, profile, max_length=1024):
-    """Generate profile text with length limit."""
-    # Build profile text
-    profile_text = ""
-    if profile:
-        for field, label in FIELD_LABELS.items():
-            value = profile.get(field)
-            if value:
-                if field == 'reference_photo':
-                    continue
-                profile_text += f"{label}: {value}\n"
-    
-    # Build message
-    text = f"👤 Анкета @{user.username or user.first_name}\n\n"
-    
-    if profile_text:
-        text += profile_text
-    
-    return text
+# Группа для profile handlers — выше приоритет, чем у combined_message_handler
+PROFILE_HANDLER_GROUP = 1
 
 
-async def profile_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Show user profile and stats in chat."""
-    user = update.effective_user
-    user_id = user.id
+# ──────────────────────────────────────────────────────
+# Helpers
+# ──────────────────────────────────────────────────────
+def _get_profile(user_id, chat_data):
+    """Load profile dict from chat_data for a user."""
+    return chat_data.setdefault("profiles", {}).setdefault(user_id, {})
+
+
+def _build_profile_keyboard(profile: dict, editable: bool = True):
+    """Build inline keyboard for profile. If editable=False, show read-only view."""
+    rows = []
+    for f in PROFILE_FIELDS:
+        label = FIELD_LABELS[f]
+        value = profile.get(f, "Не задано")
+        if f == "reference_photo":
+            value = "📷 Установлено" if value else "Не задано"
+        
+        if editable:
+            # Editable version - clickable buttons
+            rows.append(
+                [InlineKeyboardButton(f"{label}: {value}", callback_data=f"prof_edit_{f}")]
+            )
+        else:
+            # Read-only version - just text (no callback)
+            rows.append(
+                [InlineKeyboardButton(f"{label}: {value}", callback_data="prof_noop")]
+            )
     
-    # Get activity manager from bot_data
-    db_manager = context.application.bot_data.get('db_manager')
-    if not db_manager:
-        await update.message.reply_text("Извините, система анкет недоступна.")
-        return
-    
-    # Use user_id for profile (stored in user-specific database)
-    profile_activity_manager = db_manager.get_activity_manager(user_id)
-    profile = profile_activity_manager.get_profile(user_id)
-    
-    # Generate profile text (without stats)
-    text = await generate_profile_text(user, profile)
-    
-    # Get photo if available
-    photo_file_id = None
-    if profile and profile.get('reference_photo'):
-        ref_photo = profile.get('reference_photo')
-        if ref_photo and ref_photo.startswith('photo:'):
-            photo_file_id = ref_photo.split(':', 1)[1]
-    
-    # Create inline keyboard with Mini-App button
-    # Исправлено: правильное создание WebAppInfo
-    webapp_url = f"https://biegemot.github.io/kayo-bot-webapp/?user_id={user_id}"
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("✏️ Редактировать", web_app=WebAppInfo(url=webapp_url))],
-        [InlineKeyboardButton("❌ Закрыть", callback_data="profile_close")]
-    ])
-    
-    # Send photo if available
-    if photo_file_id:
-        await update.message.reply_photo(
-            photo=photo_file_id,
-            caption=text,
-            reply_markup=keyboard
+    if editable:
+        rows.append(
+            [
+                InlineKeyboardButton("✅ Готово", callback_data="prof_done"),
+                InlineKeyboardButton("❌ Закрыть", callback_data="prof_close"),
+            ]
         )
     else:
-        await update.message.reply_text(text, reply_markup=keyboard)
+        rows.append(
+            [
+                InlineKeyboardButton("❌ Закрыть", callback_data="prof_close"),
+            ]
+        )
+    return InlineKeyboardMarkup(rows)
 
 
-async def handle_profile_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle profile-related callback queries."""
+async def _delete_safe(context: ContextTypes.DEFAULT_TYPE, chat_id, msg_id):
+    """Delete a message without raising on failure."""
+    try:
+        await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+    except Exception:
+        logger.debug("Could not delete message %s in %s", msg_id, chat_id)
+
+
+# ──────────────────────────────────────────────────────
+# Command handler: /me
+# ──────────────────────────────────────────────────────
+async def profile_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Show inline profile menu. Deletes the /me command message.
+    
+    Usage:
+    /me - show and edit your own profile
+    /me @username - view another user's profile (read-only)
+    """
+    chat_id = update.effective_chat.id
+    user_id = update.effective_user.id
+    
+    # Check if user wants to view another profile
+    target_user_id = user_id
+    target_username = None
+    editable = True
+    
+    if context.args and len(context.args) > 0:
+        # Extract username from arguments (remove @ if present)
+        arg = context.args[0].lstrip('@')
+        if arg and arg != str(user_id):
+            # In real implementation, you would need to resolve username to user_id
+            # For now, we'll show a placeholder message
+            target_username = arg
+            editable = False
+    
+    profile = _get_profile(target_user_id, context.chat_data)
+
+    # Delete user command
+    try:
+        await context.bot.delete_message(
+            chat_id=chat_id, message_id=update.effective_message.message_id
+        )
+    except Exception:
+        pass
+    
+    # Prepare message text based on mode
+    if editable:
+        text = "🦊 *Твоя анкета*\n\nРедактируй поля кнопками ниже:"
+    else:
+        if target_username:
+            text = f"👤 *Анкета пользователя @{target_username}*\n\n(режим просмотра)"
+        else:
+            text = "👤 *Анкета пользователя*\n\n(режим просмотра)"
+
+    msg = await context.bot.send_message(
+        chat_id=chat_id,
+        text=text,
+        parse_mode="Markdown",
+        reply_markup=_build_profile_keyboard(profile, editable=editable),
+    )
+    context.chat_data["profile_msg_id"] = msg.message_id
+    context.chat_data["editing_field"] = None
+    context.chat_data["profile_editable"] = editable
+
+
+# ──────────────────────────────────────────────────────
+# Inline callbacks
+# ──────────────────────────────────────────────────────
+async def prof_edit_field(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Prompt user to enter a new value for a specific field."""
     query = update.callback_query
     await query.answer()
     
-    data = query.data
-    
-    # Handle edit_* patterns
-    if data.startswith("edit_"):
-        field = data.split("_", 1)[1]
-        
-        if field == "done":
-            # Close edit menu
-            await query.delete_message()
-        else:
-            # Request field value
-            await request_field_value(query.from_user.id, field, context, update)
-    
-    # Handle profile_close
-    elif data == "profile_close":
-        # Close the message
-        await query.delete_message()
-    
-    # Handle personality_* patterns
-    elif data.startswith("personality_"):
-        # Personality type selection
-        personality_type = data.split("_", 1)[1]
-        
-        # Save selected personality type
-        db_manager = context.application.bot_data.get('db_manager')
-        if db_manager:
-            activity_manager = db_manager.get_activity_manager(query.from_user.id)
-            activity_manager.save_profile_field(query.from_user.id, 'personality_type', personality_type)
-        
-        # Show updated menu
-        await show_edit_menu(query.from_user.id, context, update)
-
-
-async def show_edit_menu(user_id: int, context: ContextTypes.DEFAULT_TYPE, update: Update = None):
-    """Show edit menu in private chat or edit message in group chat."""
-    db_manager = context.application.bot_data.get('db_manager')
-    if not db_manager:
-        if update and update.message:
-            await update.message.reply_text("Извините, система анкет недоступна.")
-        else:
-            try:
-                await context.bot.send_message(
-                    chat_id=user_id,
-                    text="Извините, система анкет недоступна."
-                )
-            except Exception as e:
-                logger.error(f"Can't send message to user {user_id}: {e}")
+    # Check if profile is editable (not in view-only mode)
+    if not context.chat_data.get("profile_editable", True):
+        await query.answer("Эта анкета доступна только для просмотра", show_alert=True)
         return
     
-    # Get activity manager (use user_id as chat_id for private)
-    # Но для сохранения в правильную базу используем user_id
-    activity_manager = db_manager.get_activity_manager(user_id)
-    profile = activity_manager.get_profile(user_id)
-    
-    # Build menu text
-    text = "✏️ Редактирование анкеты\n\n"
-    if profile:
-        text += "Текущие данные:\n"
-        for field, label in FIELD_LABELS.items():
-            value = profile.get(field)
-            if value:
-                text += f"{label}: {value}\n"
+    chat_id = query.message.chat_id
+    field = query.data.replace("prof_edit_", "")
+    label = FIELD_LABELS.get(field, field)
+
+    context.chat_data["editing_field"] = field
+    context.chat_data["profile_msg_id"] = query.message.message_id
+
+    if field == "reference_photo":
+        prompt_text = f"📷 Отправь фото для *{label}*:"
     else:
-        text += "Анкета не заполнена. Начните заполнять!"
-    
-    text += "\nВыберите поле для редактирования:"
-    
-    # Create inline keyboard with field buttons
-    keyboard = []
-    for field, label in FIELD_LABELS.items():
-        # Split into rows of 2 buttons
-        if len(keyboard) == 0 or len(keyboard[-1]) >= 2:
-            keyboard.append([])
-        keyboard[-1].append(InlineKeyboardButton(label, callback_data=f"edit_{field}"))
-    
-    # Add "Готово" button
-    keyboard.append([InlineKeyboardButton("✅ Готово", callback_data="edit_done")])
-    
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    try:
-        # Try to send to private chat first
-        await context.bot.send_message(
-            chat_id=user_id,
-            text=text,
-            reply_markup=reply_markup
-        )
-    except Exception as e:
-        # If bot can't initiate conversation, try to edit message in group chat
-        logger.error(f"Can't send message to user {user_id}: {e}")
-        if update and update.callback_query:
-            try:
-                await update.callback_query.edit_message_text(
-                    text=text,
-                    reply_markup=reply_markup
-                )
-            except Exception as e2:
-                logger.error(f"Can't edit message in group chat: {e2}")
+        prompt_text = f"✏️ Введи новое значение для *{label}*:"
+
+    prompt = await query.message.reply_text(
+        prompt_text,
+        parse_mode="Markdown",
+    )
+    context.chat_data["prompt_msg_id"] = prompt.message_id
 
 
-async def request_field_value(user_id: int, field: str, context: ContextTypes.DEFAULT_TYPE, update: Update = None):
-    """Request a field value from user."""
-    # Store editing state
-    context.user_data['editing_field'] = field
-    
-    # Special handling for personality_type
-    if field == 'personality_type':
-        # Show inline keyboard with personality types
-        keyboard = []
-        for i, ptype in enumerate(PERSONALITY_TYPES):
-            if len(keyboard) == 0 or len(keyboard[-1]) >= 2:
-                keyboard.append([])
-            keyboard[-1].append(InlineKeyboardButton(ptype, callback_data=f"personality_{ptype}"))
-        
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        
-        try:
-            await context.bot.send_message(
-                chat_id=user_id,
-                text="Выберите тип личности:",
-                reply_markup=reply_markup
-            )
-        except Exception as e:
-            logger.error(f"Can't send message to user {user_id}: {e}")
-            # Try to edit message in group chat
-            if update and update.callback_query:
-                try:
-                    await update.callback_query.edit_message_text(
-                        text="❌ Невозможно отправить сообщение в личку. Бот заблокирован.",
-                        reply_markup=None
-                    )
-                except Exception as e2:
-                    logger.error(f"Can't edit message in group chat: {e2}")
-    else:
-        # Send prompt for text input
-        prompt = FIELD_PROMPTS.get(field, "Введите новое значение:")
-        try:
-            await context.bot.send_message(
-                chat_id=user_id,
-                text=prompt
-            )
-        except Exception as e:
-            logger.error(f"Can't send message to user {user_id}: {e}")
-            # Try to edit message in group chat
-            if update and update.callback_query:
-                try:
-                    await update.callback_query.edit_message_text(
-                        text="❌ Невозможно отправить сообщение в личку. Бот заблокирован.",
-                        reply_markup=None
-                    )
-                except Exception as e2:
-                    logger.error(f"Can't edit message in group chat: {e2}")
-
-
-async def handle_profile_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle user input for profile fields."""
+async def prof_set_field(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle user text/photo reply for the field being edited."""
+    chat_id = update.effective_chat.id
     user_id = update.effective_user.id
-    
-    # Check if we're expecting input
-    if 'editing_field' not in context.user_data:
-        return  # Return None explicitly (not awaited)
-    
-    field = context.user_data['editing_field']
-    
-    # Get activity manager
-    db_manager = context.application.bot_data.get('db_manager')
-    if not db_manager:
-        await update.message.reply_text("Извините, система анкет недоступна.")
+    field = context.chat_data.get("editing_field")
+
+    # Если сейчас не редактируем — пропускаем (чтобы не конфликтовать с другими хендлерами)
+    if field is None:
         return
-    
-    activity_manager = db_manager.get_activity_manager(user_id)
-    
-    # Handle photo upload
-    if field == 'reference_photo':
-        if update.message.photo:
-            # Get the largest photo
-            photo = update.message.photo[-1]
-            file_id = photo.file_id
-            value = f"photo:{file_id}"
-        elif update.message.document:
-            # Handle document (photo)
-            file_id = update.message.document.file_id
-            value = f"photo:{file_id}"
-        elif update.message.text:
-            # URL or text
-            value = update.message.text
+
+    profile = _get_profile(user_id, context.chat_data)
+
+    if field == "reference_photo":
+        if update.message and update.message.photo:
+            profile[field] = update.message.photo[-1].file_id
         else:
-            await update.message.reply_text("Пожалуйста, отправьте фото или URL.")
+            await update.message.reply_text("📷 Отправь фото!")
             return
     else:
-        # Text input
-        if not update.message.text:
-            await update.message.reply_text("Пожалуйста, введите текст.")
-            return
-        value = update.message.text
-    
-    # Save the field
-    success = activity_manager.save_profile_field(user_id, field, value)
-    
-    if success:
-        # Clear editing state
-        del context.user_data['editing_field']
-        
-        # Show updated menu
-        await show_edit_menu(user_id, context)
-    else:
-        await update.message.reply_text("Ошибка при сохранении. Попробуйте снова.")
+        profile[field] = update.message.text
+
+    # Delete prompt + user reply
+    prompt_id = context.chat_data.pop("prompt_msg_id", None)
+    if prompt_id:
+        await _delete_safe(context, chat_id, prompt_id)
+    await _delete_safe(context, chat_id, update.message.message_id)
+
+    context.chat_data["editing_field"] = None
+
+    # Update profile message
+    msg_id = context.chat_data.get("profile_msg_id")
+    if msg_id:
+        await context.bot.edit_message_text(
+            chat_id=chat_id,
+            message_id=msg_id,
+            text="🦊 *Твоя анкета*\n\nРедактируй поля кнопками ниже:",
+            parse_mode="Markdown",
+            reply_markup=_build_profile_keyboard(profile),
+        )
 
 
-# Register handlers
-def register_profile_handlers(application):
-    """Register all profile-related handlers."""
+async def prof_done(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Delete profile menu and clear state."""
+    query = update.callback_query
+    await query.answer("✅ Профиль сохранён!")
+    msg_id = context.chat_data.pop("profile_msg_id", None)
+    if msg_id:
+        await _delete_safe(context, query.message.chat_id, msg_id)
+    context.chat_data["editing_field"] = None
+
+
+async def prof_close(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Delete profile menu without saving."""
+    query = update.callback_query
+    await query.answer()
+    msg_id = context.chat_data.pop("profile_msg_id", None)
+    if msg_id:
+        await _delete_safe(context, query.message.chat_id, msg_id)
+    context.chat_data["editing_field"] = None
+
+
+async def prof_back(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Go back to profile menu."""
+    query = update.callback_query
+    await query.answer()
+    user_id = query.from_user.id
+    profile = _get_profile(user_id, context.chat_data)
+    context.chat_data["editing_field"] = None
+
+    # Delete prompt if any
+    prompt_id = context.chat_data.pop("prompt_msg_id", None)
+    chat_id = query.message.chat_id
+    if prompt_id:
+        await _delete_safe(context, chat_id, prompt_id)
+
+    await query.message.edit_text(
+        "🦊 *Твоя анкета*\n\nРедактируй поля кнопками ниже:",
+        parse_mode="Markdown",
+        reply_markup=_build_profile_keyboard(profile),
+    )
+
+
+# ──────────────────────────────────────────────────────
+# Registration
+# ──────────────────────────────────────────────────────
+def register_profile_handlers(application: Application):
+    """Register all profile handlers on the given application."""
     application.add_handler(CommandHandler("me", profile_command))
-    application.add_handler(CallbackQueryHandler(handle_profile_callback, pattern="^profile_"))
-    application.add_handler(CallbackQueryHandler(handle_profile_callback, pattern="^edit_"))
-    application.add_handler(CallbackQueryHandler(handle_profile_callback, pattern="^personality_"))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_profile_message))
-    application.add_handler(MessageHandler(filters.PHOTO | filters.Document.IMAGE, handle_profile_message))
+    application.add_handler(CallbackQueryHandler(prof_edit_field, pattern="^prof_edit_.*$"))
+    application.add_handler(CallbackQueryHandler(prof_done, pattern="^prof_done$"))
+    application.add_handler(CallbackQueryHandler(prof_close, pattern="^prof_close$"))
+    application.add_handler(CallbackQueryHandler(prof_back, pattern="^prof_back$"))
+    # Catch text & photo replies for field editing (в отдельной группе, выше приоритет)
+    application.add_handler(
+        MessageHandler(filters.TEXT & ~filters.COMMAND, prof_set_field),
+        group=PROFILE_HANDLER_GROUP,
+    )
+    application.add_handler(
+        MessageHandler(filters.PHOTO, prof_set_field),
+        group=PROFILE_HANDLER_GROUP,
+    )
